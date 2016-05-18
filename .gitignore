@@ -1,0 +1,6 @@
+# Created by .ignore support plugin (hsz.mobi)
+explorer/node_modules
+explorer/dist
+dist/*
+assets/bindata.go
+*.db
