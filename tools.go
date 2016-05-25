@@ -1,16 +1,18 @@
 package pkgmirror
 
 import (
-	"github.com/boltdb/bolt"
-	"fmt"
-	"time"
-	"encoding/json"
 	"bytes"
-	"os"
-	"net/http"
+	"encoding/json"
+	"fmt"
 	"io"
-	log "github.com/Sirupsen/logrus"
+	"net/http"
+	"os"
 	"sync"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
+	"github.com/rande/goapp"
 )
 
 func LoadDB(name string) (*bolt.DB, error) {
@@ -65,27 +67,22 @@ func LoadRemoteStruct(url string, v interface{}) error {
 	return nil
 }
 
-func NewDownloadManager() *DownloadManager {
-	return &DownloadManager{
-		Add: make(chan PackageInformation),
-	}
-}
-
 type DownloadManager struct {
-	Add     chan PackageInformation
+	Add   chan PackageInformation
+	Count int
 }
 
-func (dm *DownloadManager) Wait(c int, fn func(id int, done chan<- struct{}, urls <-chan PackageInformation)) {
+func (dm *DownloadManager) Wait(state *goapp.GoroutineState, fn func(id int, done chan<- struct{}, urls <-chan PackageInformation)) {
 	done := make(chan struct{})
 	defer close(done)
 
 	var wg sync.WaitGroup
 
-	wg.Add(c)
+	wg.Add(dm.Count)
 
 	pkgs := make(chan PackageInformation)
 
-	for i := 0; i < c; i++ {
+	for i := 0; i < dm.Count; i++ {
 		go func(id int) {
 			fn(id, done, pkgs)
 			wg.Done()
@@ -98,22 +95,40 @@ func (dm *DownloadManager) Wait(c int, fn func(id int, done chan<- struct{}, url
 			select {
 			case pkg := <-dm.Add:
 				log.WithFields(log.Fields{
-					"url": pkg.Url,
-				}).Info("Append new urls")
+					"package": pkg.Package,
+				}).Debug("Append new package")
 
 				pkgs <- pkg
 
+			case <-state.In:
+				log.Info("Exiting, reason: state.In signal received")
+				return
 			case <-done:
-				log.WithFields(log.Fields{
-				}).Info("Exiting proxy receiving urls")
+				log.Info("Exiting, reason: done signal received")
 				return
 			}
 		}
 	}()
 
-	log.WithFields(log.Fields{
-		"worker": c,
-	}).Info("Waiting for action")
-
 	wg.Wait()
+
+	close(pkgs)
+}
+
+func SendWithHttpCode(res http.ResponseWriter, code int, message string) {
+	res.Header().Set("Content-Type", "application/json")
+
+	res.WriteHeader(code)
+
+	status := "KO"
+	if code >= 200 && code < 300 {
+		status = "OK"
+	}
+
+	data, _ := json.Marshal(map[string]string{
+		"status":  status,
+		"message": message,
+	})
+
+	res.Write(data)
 }

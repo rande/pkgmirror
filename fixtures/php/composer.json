@@ -1,0 +1,13 @@
+{
+    "repositories":[
+        { "packagist": false },
+        { "type": "composer", "url": "http://localhost:8000"}
+    ],
+
+    "require": {
+        "sonata-project/exporter": "*"
+    },
+    "config": {
+        "secure-http": false
+    }
+}

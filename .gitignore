@@ -1,6 +1,3 @@
-# Created by .ignore support plugin (hsz.mobi)
-explorer/node_modules
-explorer/dist
-dist/*
-assets/bindata.go
-*.db
+data/
+fixtures/php/vendor
+fixtures/php/composer.lock

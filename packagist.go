@@ -1,74 +1,98 @@
 package pkgmirror
 
 import (
-	"github.com/boltdb/bolt"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
-	log "github.com/Sirupsen/logrus"
 	"sync"
-	"encoding/json"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
+	"github.com/rande/goapp"
 )
 
-type PackageInformation struct {
-	Url           string
-	PackageResult PackageResult
-	Package       string
-	Exist         bool
+type PackagistConfig struct {
+	Server string
+	Code   []byte
 }
 
-func PackagistMirror() {
-	db, _ := LoadDB("packagist")
+func NewPackagistService() *PackagistService {
+	return &PackagistService{
+		Config: &PackagistConfig{
+			Server: "https://packagist.org",
+			Code:   []byte("packagist"),
+		},
+	}
+}
 
-	baseServer := "https://packagist.org"
+type PackagistService struct {
+	DB              *bolt.DB
+	Config          *PackagistConfig
+	DownloadManager *DownloadManager
+	Logger          *log.Entry
+	GitConfig       *GitConfig
+}
 
-	bName := []byte("data")
+func (ps *PackagistService) Init(app *goapp.App) error {
+	var err error
 
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(bName)
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
+	ps.Logger.Info("Init")
 
-		return nil
+	ps.DB, err = bolt.Open(fmt.Sprintf("./data/packagist_%s.db", ps.Config.Code), 0600, &bolt.Options{
+		Timeout:  1 * time.Second,
+		ReadOnly: false,
 	})
 
-	db.View(func(tx *bolt.Tx) error {
-		// Assume bucket exists and has keys
-		b := tx.Bucket([]byte("data"))
+	if err != nil {
+		return err
+	}
 
-		c := b.Cursor()
+	return ps.DB.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(ps.Config.Code)
 
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			fmt.Printf("%s\n", k)
-		}
-
-		return nil
+		return err
 	})
+}
 
-	dm := NewDownloadManager()
+func (ps *PackagistService) Serve(state *goapp.GoroutineState) error {
+	ps.Logger.Info("Starting Packagist Service")
 
-	ps := &PackagesResult{}
+	for {
+		ps.SyncMirror(state)
+		ps.Logger.Info("Wait before starting a new sync...")
+		time.Sleep(60 * time.Second)
+	}
+}
 
-	url := fmt.Sprintf("%s/packages.json", baseServer)
+func (ps *PackagistService) End() error {
 
-	log.WithFields(log.Fields{
-		"handler": "packagist",
-		"server": baseServer,
-		"url": url,
-	}).Info("Loading packages.json")
+	return nil
+}
 
-	if err := LoadRemoteStruct(url, ps); err != nil {
-		log.WithFields(log.Fields{
-			"handler": "packagist",
-			"server": baseServer,
-			"url": url,
+func (ps *PackagistService) SyncMirror(state *goapp.GoroutineState) {
+	ps.Logger.Info("Starting PackagistService Sync Mirror")
+
+	dm := &DownloadManager{
+		Add:   make(chan PackageInformation),
+		Count: 15,
+	}
+	pr := &PackagesResult{}
+
+	url := fmt.Sprintf("%s/packages.json", ps.Config.Server)
+
+	ps.Logger.Debug("Loading packages.json")
+
+	if err := LoadRemoteStruct(url, pr); err != nil {
+		ps.Logger.WithFields(log.Fields{
+			"path":  "packages.json",
 			"error": err.Error(),
 		}).Error("Error loading packages.json")
 	} else {
-		log.WithFields(log.Fields{
-			"handler": "packagist",
-			"server": baseServer,
-			"url": url,
+		ps.Logger.WithFields(log.Fields{
+			"path": "packages.json",
 		}).Info("End loading packages.json")
 	}
 
@@ -77,153 +101,212 @@ func PackagistMirror() {
 
 	PackageListener := make(chan PackageInformation)
 
-	go dm.Wait(10, func(id int, done chan <- struct{}, pkgs <-chan PackageInformation) {
+	go dm.Wait(state, func(id int, done chan<- struct{}, pkgs <-chan PackageInformation) {
 		for pkg := range pkgs {
 			p := &PackageResult{}
 
-			log.WithFields(log.Fields{
-				"handler": "packagist",
-				"server": baseServer,
-				"url": pkg.Url,
+			ps.Logger.WithFields(log.Fields{
 				"package": pkg.Package,
-				"id": id,
-			}).Info("Loading package information")
+				"id":      id,
+			}).Info("Retrieve package information")
 
-			if err := LoadRemoteStruct(pkg.Url, p); err != nil {
-				log.WithFields(log.Fields{
-					"handler": "packagist",
-					"server": baseServer,
-					"url": pkg.Url,
+			if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.Server, pkg.GetSourceKey()), p); err != nil {
+				ps.Logger.WithFields(log.Fields{
 					"package": pkg.Package,
-					"error": err.Error(),
+					"error":   err.Error(),
 				}).Error("Error loading package information")
 			}
 
 			pkg.PackageResult = *p
 
 			PackageListener <- pkg
-
-			wg.Done()
 		}
 	})
 
-	go func() {
-		cpt := 0
-
+	go func(db *bolt.DB) {
 		for {
 			select {
 			case pkg := <-PackageListener:
-
-				cpt++
-
-				data, _ := json.Marshal(pkg.PackageResult)
-
 				lock.Lock()
+				db.Update(func(tx *bolt.Tx) error {
+					b := tx.Bucket(ps.Config.Code)
 
-				err := db.Update(func(tx *bolt.Tx) error {
-					b := tx.Bucket([]byte("data"))
-					err := b.Put([]byte(pkg.Url), data)
+					logger := ps.Logger.WithFields(log.Fields{
+						"package": pkg.Package,
+						"path":    pkg.GetTargetKey(),
+					})
 
-					if err != nil {
-						log.WithFields(log.Fields{
-							"handler": "packagist",
-							"url": pkg.Url,
-							"package": pkg.Package,
-							"error": err.Error(),
-						}).Error("Bolt error")
+					for _, version := range pkg.PackageResult.Packages[pkg.Package] {
+						version.Dist.URL = GitRewriteArchive(ps.GitConfig, version.Dist.URL)
+						version.Source.URL = GitRewriteRepository(ps.GitConfig, version.Source.URL)
+					}
+
+					data, _ := json.Marshal(pkg.PackageResult)
+					sha := sha256.Sum256(data)
+					pkg.HashTarget = hex.EncodeToString(sha[:])
+
+					// store the path
+					if err := b.Put([]byte(pkg.GetTargetKey()), data); err != nil {
+						logger.WithError(err).Error("Error updating/creating definition")
+
+						return err
+					} else {
+						data, _ := json.Marshal(pkg)
+
+						if err := b.Put([]byte(pkg.Package), data); err != nil {
+							logger.WithError(err).Error("Error updating/creating hash definition")
+
+							return err
+						}
 					}
 
 					return nil
 				})
-
 				lock.Unlock()
 
-				if err != nil {
-					log.WithFields(log.Fields{
-						"handler": "packagist",
-						"package": pkg.Package,
-						"url": pkg.Url,
-						"error": err.Error(),
-					}).Error("Error updating/creating bolt entry")
-				} else {
-					log.WithFields(log.Fields{
-						"handler": "packagist",
-						"package": pkg.Package,
-						"url": pkg.Url,
-						"counter": cpt,
-					}).Info("Package information saved!!")
-				}
+				wg.Done()
 			}
 		}
-	}()
+	}(ps.DB)
 
-	for name, sha := range ps.ProviderIncludes {
-		url := fmt.Sprintf("%s/%s", baseServer, strings.Replace(name, "%hash%", sha.Sha256, -1))
+	providers := map[string]*ProvidersResult{}
 
-		log.WithFields(log.Fields{
-			"handler": "packagist",
-			"server": baseServer,
-			"url": url,
-			"provider": name,
-		}).Info("Loading provider information")
+	for provider, sha := range pr.ProviderIncludes {
+		path := strings.Replace(provider, "%hash%", sha.Sha256, -1)
+
+		logger := ps.Logger.WithFields(log.Fields{
+			"provider": provider,
+			"path":     path,
+		})
+
+		logger.Info("Loading provider information")
 
 		pr := &ProvidersResult{}
 
-		if err := LoadRemoteStruct(url, pr); err != nil {
-			log.WithFields(log.Fields{
-				"handler": "packagist",
-				"server": baseServer,
-				"url": url,
-				"provider": name,
-				"error": err.Error(),
-			}).Error("Error loading provider information")
+		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.Server, path), pr); err != nil {
+			log.WithField("error", err.Error()).Error("Error loading provider information")
+		} else {
+			log.Debug("End loading provider information")
 		}
 
-		for name, sha := range pr.Providers {
-			url := fmt.Sprintf("%s/p/%s$%s.json", baseServer, name, sha.Sha256)
+		providers[provider] = pr
 
+		for name, sha := range pr.Providers {
 			p := PackageInformation{
-				Url: url,
 				Package: name,
-				Exist: false,
+				Exist:   false,
 			}
 
 			lock.Lock()
-			db.View(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("data"))
-				v := b.Get([]byte(url))
+			ps.DB.View(func(tx *bolt.Tx) error {
+				b := tx.Bucket(ps.Config.Code)
+				data := b.Get([]byte(p.Package))
 
-				p.Exist = len(v) != 0
+				p.Exist = false
+
+				if err := json.Unmarshal(data, &p); err == nil {
+					p.Exist = p.HashSource == sha.Sha256
+				}
+
+				p.HashSource = sha.Sha256
 
 				return nil
 			})
 			lock.Unlock()
 
+			logger := ps.Logger.WithFields(log.Fields{
+				"provider": provider,
+				"package":  name,
+			})
+
 			if !p.Exist {
-				log.WithFields(log.Fields{
-					"handler": "packagist",
-					"server": baseServer,
-					"package": name,
-					"url": url,
-				}).Info("Add new package")
+				logger.Info("Add new package")
 
 				wg.Add(1)
-
 				dm.Add <- p
 			} else {
-				log.WithFields(log.Fields{
-					"handler": "packagist",
-					"server": baseServer,
-					"package": name,
-					"url": url,
-				}).Info("Skipping package")
+				logger.Debug("Skipping package")
 			}
 		}
 	}
 
-	log.WithFields(log.Fields{
-		"handler": "packagist",
-	}).Info("Wait for goroutines to complete")
+	ps.Logger.Info("Wait for download to complete")
 
 	wg.Wait()
+
+	ps.Logger.Info("Update provider files and packages.json")
+
+	for provider := range pr.ProviderIncludes {
+		for name := range providers[provider].Providers {
+			ps.DB.View(func(tx *bolt.Tx) error {
+				b := tx.Bucket(ps.Config.Code)
+				data := b.Get([]byte(name))
+
+				pi := &PackageInformation{}
+				if err := json.Unmarshal(data, pi); err != nil {
+					return err
+				}
+
+				// https://github.com/golang/go/issues/3117
+				p := providers[provider].Providers[name]
+				p.Sha256 = pi.HashTarget
+				providers[provider].Providers[name] = p
+
+				return nil
+			})
+		}
+
+		// save provider
+		data, _ := json.Marshal(providers[provider])
+		hash := sha256.Sum256(data)
+
+		// https://github.com/golang/go/issues/3117
+		p := pr.ProviderIncludes[provider]
+		p.Sha256 = hex.EncodeToString(hash[:])
+		pr.ProviderIncludes[provider] = p
+
+		path := strings.Replace(provider, "%hash%", p.Sha256, -1)
+
+		ps.DB.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket(ps.Config.Code)
+			b.Put([]byte(path), data)
+
+			ps.Logger.WithFields(log.Fields{
+				"provider": provider,
+				"path":     path,
+			}).Debug("Save provider")
+
+			return nil
+		})
+	}
+
+	ps.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ps.Config.Code)
+		data, _ := json.Marshal(pr)
+		b.Put([]byte("packages.json"), data)
+
+		ps.Logger.Info("Save packages.json")
+
+		return nil
+	})
+
+	ps.Logger.Info("End update cycle")
+}
+
+func (ps *PackagistService) Get(key string) ([]byte, error) {
+	var data []byte
+
+	err := ps.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ps.Config.Code)
+
+		raw := b.Get([]byte(key))
+
+		data = make([]byte, len(raw))
+
+		copy(data, raw)
+
+		return nil
+	})
+
+	return data, err
 }
