@@ -6,15 +6,17 @@ import (
 	"time"
 )
 
+type ProviderInclude map[string]struct {
+	Sha256 string `json:"sha256"`
+}
+
 type PackagesResult struct {
 	Packages         json.RawMessage `json:"packages"`
 	Notify           string          `json:"notify"`
 	NotifyBatch      string          `json:"notify-batch"`
 	ProvidersURL     string          `json:"providers-url"`
 	Search           string          `json:"search"`
-	ProviderIncludes map[string]struct {
-		Sha256 string `json:"sha256"`
-	} `json:"provider-includes"`
+	ProviderIncludes ProviderInclude `json:"provider-includes"`
 }
 
 type ProvidersResult struct {
@@ -62,6 +64,7 @@ type PackageResult struct {
 }
 
 type PackageInformation struct {
+	Server        string        `json:"server"`
 	PackageResult PackageResult `json:"-"`
 	Package       string        `json:"package"`
 	Exist         bool          `json:"-"`
@@ -70,9 +73,9 @@ type PackageInformation struct {
 }
 
 func (pi *PackageInformation) GetSourceKey() string {
-	return fmt.Sprintf("p/%s$%s.json", pi.Package, pi.HashSource)
+	return fmt.Sprintf("%s$%s.json", pi.Package, pi.HashSource)
 }
 
 func (pi *PackageInformation) GetTargetKey() string {
-	return fmt.Sprintf("p/%s$%s.json", pi.Package, pi.HashTarget)
+	return fmt.Sprintf("%s$%s", pi.Package, pi.HashTarget)
 }

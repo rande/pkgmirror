@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"time"
 
+	"sync"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
@@ -48,22 +50,21 @@ type GitService struct {
 }
 
 func (gs *GitService) Init(app *goapp.App) error {
-	os.MkdirAll("."+string(filepath.Separator)+gs.Config.Path, 0755)
+	os.MkdirAll(string(filepath.Separator)+gs.Config.Path, 0755)
 
 	return nil
 }
 
 func (gs *GitService) Serve(state *goapp.GoroutineState) error {
-
 	for {
 		select {
 		case <-state.In:
 			return nil
 		default:
-			gs.SyncRepositories()
+			gs.SyncServices()
 
 			gs.Logger.Info("Wait before starting a new sync...")
-			time.Sleep(60 * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
@@ -72,16 +73,49 @@ func (gs *GitService) End() error {
 	return nil
 }
 
-func (gs *GitService) SyncRepositories() {
+func (gs *GitService) SyncServices() {
 	// require structure
 	// hostname/vendor/project.git
-	glob := fmt.Sprintf("%s/*/*/*", gs.Config.Path)
+	glob := fmt.Sprintf("%s/*", gs.Config.Path)
+	services, _ := filepath.Glob(glob)
+
 	gs.Logger.WithFields(log.Fields{
-		"glob":   glob,
-		"action": "sync",
+		"glob":     glob,
+		"action":   "sync",
+		"services": services,
 	}).Info("Sync repositories")
 
-	paths, _ := filepath.Glob(glob)
+	var wg sync.WaitGroup
+
+	for _, path := range services {
+		wg.Add(1)
+
+		go gs.SyncRepositories(path, wg)
+	}
+
+	wg.Wait()
+}
+
+func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
+	gs.Logger.WithFields(log.Fields{
+		"action":  "sync",
+		"service": service,
+	}).Info("Sync service's repositories")
+
+	searchPaths := []string{
+		fmt.Sprintf("%s/*.git", service),
+		fmt.Sprintf("%s/*/*.git", service),
+		fmt.Sprintf("%s/*/*/*.git", service),
+	}
+
+	paths := []string{}
+	for _, searchPath := range searchPaths {
+		if p, err := filepath.Glob(searchPath); err != nil {
+			continue
+		} else {
+			paths = append(paths, p...)
+		}
+	}
 
 	for _, path := range paths {
 		logger := gs.Logger.WithFields(log.Fields{
@@ -89,8 +123,7 @@ func (gs *GitService) SyncRepositories() {
 			"action": "fetch",
 		})
 
-		path = "." + string(filepath.Separator) + path
-		logger.Info("Sync repository")
+		logger.Debug("Sync repository")
 
 		cmd := exec.Command(gs.Config.Binary, "fetch")
 		cmd.Dir = path
@@ -125,8 +158,10 @@ func (gs *GitService) SyncRepositories() {
 		gs.Logger.WithFields(log.Fields{
 			"path":   path,
 			"action": "sync",
-		}).Info("Complete the fetch and update-server-info commands")
+		}).Debug("Complete the fetch and update-server-info commands")
 	}
+
+	wg.Done()
 }
 
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {

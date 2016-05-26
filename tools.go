@@ -3,25 +3,11 @@ package pkgmirror
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"sync"
-	"time"
-
-	log "github.com/Sirupsen/logrus"
-	"github.com/boltdb/bolt"
-	"github.com/rande/goapp"
 )
-
-func LoadDB(name string) (*bolt.DB, error) {
-	db, err := bolt.Open(fmt.Sprintf("%s.db", name), 0600, &bolt.Options{
-		Timeout: 1 * time.Second,
-	})
-
-	return db, err
-}
 
 func LoadStruct(file string, v interface{}) error {
 	r, err := os.Open(file)
@@ -70,12 +56,10 @@ func LoadRemoteStruct(url string, v interface{}) error {
 type DownloadManager struct {
 	Add   chan PackageInformation
 	Count int
+	Done  chan struct{}
 }
 
-func (dm *DownloadManager) Wait(state *goapp.GoroutineState, fn func(id int, done chan<- struct{}, urls <-chan PackageInformation)) {
-	done := make(chan struct{})
-	defer close(done)
-
+func (dm *DownloadManager) Wait(fn func(id int, urls <-chan PackageInformation)) {
 	var wg sync.WaitGroup
 
 	wg.Add(dm.Count)
@@ -84,7 +68,7 @@ func (dm *DownloadManager) Wait(state *goapp.GoroutineState, fn func(id int, don
 
 	for i := 0; i < dm.Count; i++ {
 		go func(id int) {
-			fn(id, done, pkgs)
+			fn(id, pkgs)
 			wg.Done()
 		}(i)
 	}
@@ -94,25 +78,16 @@ func (dm *DownloadManager) Wait(state *goapp.GoroutineState, fn func(id int, don
 		for {
 			select {
 			case pkg := <-dm.Add:
-				log.WithFields(log.Fields{
-					"package": pkg.Package,
-				}).Debug("Append new package")
-
 				pkgs <- pkg
 
-			case <-state.In:
-				log.Info("Exiting, reason: state.In signal received")
-				return
-			case <-done:
-				log.Info("Exiting, reason: done signal received")
+			case <-dm.Done:
+				close(pkgs)
 				return
 			}
 		}
 	}()
 
 	wg.Wait()
-
-	close(pkgs)
 }
 
 func SendWithHttpCode(res http.ResponseWriter, code int, message string) {

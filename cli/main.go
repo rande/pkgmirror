@@ -11,6 +11,8 @@ import (
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
+
+	"net/http/pprof"
 )
 
 func main() {
@@ -99,12 +101,8 @@ func main() {
 		packagist := app.Get("mirror.packagist").(*pkgmirror.PackagistService)
 		git := app.Get("mirror.git").(*pkgmirror.GitService)
 
-		mux.HandleFuncC(pat.Get("/packages.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-
-			data, err := packagist.Get("packages.json")
-
-			if err != nil {
+		mux.HandleFuncC(pat.Get("/packagist/packages.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			if data, err := packagist.Get("packages.json"); err != nil {
 				pkgmirror.SendWithHttpCode(w, 500, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
@@ -112,18 +110,8 @@ func main() {
 			}
 		})
 
-		mux.HandleFuncC(pat.Get("/p/:ref.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-
-			ref := pat.Param(ctx, "ref")
-
-			key := fmt.Sprintf("p/%s.json", ref)
-
-			logger.WithField("key", key).Info("Get provider information")
-
-			data, err := packagist.Get(key)
-
-			if err != nil {
+		mux.HandleFuncC(pat.Get("/packagist/p/:ref.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			if data, err := packagist.Get(fmt.Sprintf("p/%s.json", pat.Param(ctx, "ref"))); err != nil {
 				pkgmirror.SendWithHttpCode(w, 500, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
@@ -131,20 +119,26 @@ func main() {
 			}
 		})
 
-		mux.HandleFuncC(pat.Get("/p/:vendor/:package.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			pkg := pat.Param(ctx, "package")
-			vendor := pat.Param(ctx, "vendor")
+		mux.HandleFuncC(pat.Get("/packagist/p/:vendor/:package.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := fmt.Sprintf("%s/%s", pat.Param(ctx, "vendor"), pat.Param(ctx, "package"))
 
-			key := fmt.Sprintf("p/%s/%s.json", vendor, pkg)
+			if refresh := r.FormValue("refresh"); len(refresh) > 0 {
+				w.Header().Set("Content-Type", "application/json")
 
-			logger.WithField("key", key).Info("Get package information")
+				if err := packagist.UpdatePackage(pkg); err != nil {
+					pkgmirror.SendWithHttpCode(w, 500, err.Error())
+				} else {
+					pkgmirror.SendWithHttpCode(w, 200, "Package updated")
+				}
 
-			data, err := packagist.Get(key)
+				return
+			}
 
-			if err != nil {
-				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+			if data, err := packagist.Get(fmt.Sprintf("%s", pkg)); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Encoding", "gzip")
 				w.Write(data)
 			}
 		})
@@ -177,6 +171,11 @@ func main() {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		})
+
+		//mux.HandleFunc(pat.Get("/debug/pprof/cmdline"), http.HandlerFunc(pprof.Cmdline))
+		//mux.HandleFunc(pat.Get("/debug/pprof/profile"), http.HandlerFunc(pprof.Profile))
+		//mux.HandleFunc(pat.Get("/debug/pprof/symbol"), http.HandlerFunc(pprof.Symbol))
+		mux.HandleFunc(pat.Get("/debug/pprof/*"), http.HandlerFunc(pprof.Index))
 
 		http.ListenAndServe("localhost:8000", mux)
 

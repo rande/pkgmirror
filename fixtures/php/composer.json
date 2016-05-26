@@ -1,7 +1,7 @@
 {
     "repositories":[
         { "packagist": false },
-        { "type": "composer", "url": "http://localhost:8000"}
+        { "type": "composer", "url": "http://localhost:8000/packagist"}
     ],
 
     "require": {
