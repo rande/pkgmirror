@@ -86,7 +86,7 @@ func (gs *GitService) SyncServices() {
 
 	gs.Logger.WithFields(log.Fields{
 		"glob":     glob,
-		"action":   "sync",
+		"action":   "SyncServices",
 		"services": services,
 	}).Info("Sync repositories")
 
@@ -103,7 +103,7 @@ func (gs *GitService) SyncServices() {
 
 func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 	gs.Logger.WithFields(log.Fields{
-		"action":  "sync",
+		"action":  "SyncRepositories",
 		"service": service,
 	}).Info("Sync service's repositories")
 
@@ -125,10 +125,10 @@ func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 	for _, path := range paths {
 		logger := gs.Logger.WithFields(log.Fields{
 			"path":   path,
-			"action": "fetch",
+			"action": "SyncRepositories",
 		})
 
-		logger.Debug("Sync repository")
+		logger.Info("Sync repository")
 
 		cmd := exec.Command(gs.Config.Binary, "fetch")
 		cmd.Dir = path
@@ -162,7 +162,7 @@ func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 
 		gs.Logger.WithFields(log.Fields{
 			"path":   path,
-			"action": "sync",
+			"action": "SyncRepositories",
 		}).Debug("Complete the fetch and update-server-info commands")
 	}
 
@@ -172,7 +172,7 @@ func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
 	logger := gs.Logger.WithFields(log.Fields{
 		"path":   path,
-		"action": "archive",
+		"action": "WriteArchive",
 	})
 
 	cmd := exec.Command(gs.Config.Binary, "archive", "--format=zip", ref)
@@ -204,7 +204,7 @@ func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
 func (gs *GitService) WriteFile(w io.Writer, path string) error {
 	logger := gs.Logger.WithFields(log.Fields{
 		"path":   path,
-		"action": "fetch",
+		"action": "WriteFile",
 	})
 
 	if f, err := os.Open(gs.Config.Path + string(filepath.Separator) + path); err != nil {

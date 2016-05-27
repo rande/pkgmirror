@@ -217,7 +217,9 @@ func (c *ServerCommand) Run(args []string) int {
 			path := fmt.Sprintf("%s/%s/%s.git", hostname, vendor, pkg)
 
 			w.Header().Set("Content-Type", "application/zip")
-			git.WriteArchive(w, path, ref)
+			if err := git.WriteArchive(w, path, ref); err != nil {
+				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+			}
 		})
 
 		mux.HandleFuncC(pat.Get("/git/*"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {

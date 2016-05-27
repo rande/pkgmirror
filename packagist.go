@@ -99,7 +99,7 @@ func (ps *PackagistService) SyncPackages() error {
 
 	dm := &DownloadManager{
 		Add:   make(chan PackageInformation),
-		Count: 5,
+		Count: 10,
 		Done:  make(chan struct{}),
 	}
 	pr := &PackagesResult{}
