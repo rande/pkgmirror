@@ -1,3 +1,8 @@
+// Copyright © 2016 Thomas Rabaix <thomas.rabaix@gmail.com>.
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file.
+
 package pkgmirror
 
 import (
@@ -23,17 +28,17 @@ var (
 )
 
 type PackagistConfig struct {
-	Server string
-	Code   []byte
-	Path   string
+	SourceServer string
+	Code         []byte
+	Path         string
 }
 
 func NewPackagistService() *PackagistService {
 	return &PackagistService{
 		Config: &PackagistConfig{
-			Server: "https://packagist.org",
-			Code:   []byte("packagist"),
-			Path:   "./data/composer",
+			SourceServer: "https://packagist.org",
+			Code:         []byte("packagist"),
+			Path:         "./data/composer",
 		},
 	}
 }
@@ -99,7 +104,9 @@ func (ps *PackagistService) SyncPackages() error {
 	}
 	pr := &PackagesResult{}
 
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.Server), pr); err != nil {
+	logger.Info("Loading packages.json")
+
+	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
 		logger.WithFields(log.Fields{
 			"path":  "packages.json",
 			"error": err.Error(),
@@ -119,7 +126,7 @@ func (ps *PackagistService) SyncPackages() error {
 
 			cpt := 0
 			for {
-				if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.Server, pkg.GetSourceKey()), p); err != nil {
+				if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), p); err != nil {
 					logger.WithFields(log.Fields{
 						"package": pkg.Package,
 						"error":   err.Error(),
@@ -160,6 +167,7 @@ func (ps *PackagistService) SyncPackages() error {
 		}
 	}()
 
+	logger.Info("Loading packages.json")
 	for provider, sha := range pr.ProviderIncludes {
 		path := strings.Replace(provider, "%hash%", sha.Sha256, -1)
 
@@ -172,7 +180,7 @@ func (ps *PackagistService) SyncPackages() error {
 
 		pr := &ProvidersResult{}
 
-		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.Server, path), pr); err != nil {
+		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, path), pr); err != nil {
 			logger.WithField("error", err.Error()).Error("Error loading provider information")
 		} else {
 			logger.Debug("End loading provider information")
@@ -188,6 +196,8 @@ func (ps *PackagistService) SyncPackages() error {
 			logger := logger.WithFields(log.Fields{
 				"package": name,
 			})
+
+			logger.Debug("Analysing package")
 
 			lock.Lock()
 			ps.DB.View(func(tx *bolt.Tx) error {
@@ -270,7 +280,7 @@ func (ps *PackagistService) UpdateEntryPoints() error {
 	logger.Info("Start")
 
 	pkgResult := &PackagesResult{}
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.Server), pkgResult); err != nil {
+	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pkgResult); err != nil {
 		logger.WithFields(log.Fields{
 			"path":  "packages.json",
 			"error": err.Error(),
@@ -288,7 +298,7 @@ func (ps *PackagistService) UpdateEntryPoints() error {
 
 		logger.WithField("provider", provider).Info("Load provider")
 
-		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.Server, strings.Replace(provider, "%hash%", sha.Sha256, -1)), pr); err != nil {
+		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, strings.Replace(provider, "%hash%", sha.Sha256, -1)), pr); err != nil {
 			ps.Logger.WithField("error", err.Error()).Error("Error loading provider information")
 		}
 
@@ -378,7 +388,7 @@ func (ps *PackagistService) UpdatePackage(name string) error {
 
 	pkg := &PackageInformation{
 		Package: name,
-		Server:  ps.Config.Server,
+		Server:  ps.Config.SourceServer,
 	}
 
 	ps.Logger.WithFields(log.Fields{
@@ -403,7 +413,7 @@ func (ps *PackagistService) UpdatePackage(name string) error {
 
 	pkg.PackageResult = PackageResult{}
 
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.Server, pkg.GetSourceKey()), &pkg.PackageResult); err != nil {
+	if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), &pkg.PackageResult); err != nil {
 		ps.Logger.WithFields(log.Fields{
 			"package": pkg.Package,
 			"error":   err.Error(),
