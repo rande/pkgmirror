@@ -18,10 +18,11 @@ func Test_Config(t *testing.T) {
 	confStr := `
 DataDir = "/var/lib/pkgmirror"
 PublicServer = "https://mirror.example.com"
-InternalServer = "localhost:8000
+InternalServer = "localhost:8000"
 `
 
-	toml.Decode(confStr, c)
+	_, err := toml.Decode(confStr, c)
 
+	assert.NoError(t, err)
 	assert.Equal(t, "/var/lib/pkgmirror", c.DataDir)
 }

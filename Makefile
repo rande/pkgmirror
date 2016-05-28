@@ -18,6 +18,7 @@ test:      ## Run backend tests
 
 install:  ## Install backend dependencies
 	go get github.com/boltdb/bolt/...
+	go get github.com/rande/gonode/...
 	go get golang.org/x/tools/cmd/goimports
 	go list -f '{{range .Imports}}{{.}} {{end}}' ./... | xargs go get -v
 	go list -f '{{range .TestImports}}{{.}} {{end}}' ./... | xargs go get -v

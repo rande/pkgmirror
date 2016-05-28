@@ -6,17 +6,18 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"strings"
-
-	"flag"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/rande/goapp"
+	"github.com/rande/gonode/core/vault"
 	"github.com/rande/pkgmirror"
 	"goji.io"
 	"goji.io/pat"
@@ -46,7 +47,10 @@ func (c *ServerCommand) Run(args []string) int {
 		return 1
 	}
 
-	config := &pkgmirror.Config{}
+	config := &pkgmirror.Config{
+		CacheDir: fmt.Sprintf("%s/pkgmirror", os.TempDir()),
+	}
+
 	if _, err := toml.DecodeFile(c.ConfFile, config); err != nil {
 		c.Ui.Error(fmt.Sprintf("Unable to parse configuration file: %s", c.ConfFile))
 
@@ -122,7 +126,13 @@ func (c *ServerCommand) Run(args []string) int {
 		app.Set("mirror.git", func(app *goapp.App) interface{} {
 			s := pkgmirror.NewGitService()
 			s.Config.Server = config.PublicServer
-			s.Config.Path = fmt.Sprintf("%s/git", config.DataDir)
+			s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
+			s.Vault = &vault.Vault{
+				Algo: "no_op",
+				Driver: &vault.DriverFs{
+					Root: fmt.Sprintf("%s/git", config.CacheDir),
+				},
+			}
 			s.Logger = logger.WithFields(log.Fields{
 				"handler": "git",
 			})

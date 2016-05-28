@@ -8,6 +8,7 @@ package pkgmirror
 type Config struct {
 	DataDir        string
 	LogDir         string
+	CacheDir       string
 	PublicServer   string
 	InternalServer string
 }

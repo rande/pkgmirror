@@ -19,6 +19,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
+	"github.com/rande/gonode/core/vault"
 )
 
 var (
@@ -28,49 +29,55 @@ var (
 
 	GIT_REPOSITORY = regexp.MustCompile(`^(((git|http(s|)):\/\/|git@))([\w-\.]+@|)([\w-\.]+)(\/|:)([\w-\.\/]+?)(\.git|)$`)
 	SVN_REPOSITORY = regexp.MustCompile(`(svn:\/\/(.*)|(.*)\.svn\.(.*))`)
+
+	CACHEABLE_REF = regexp.MustCompile(`([\w\d]{40}|[\w\d]+\.[\w\d]+\.[\w\d]+(-[\w\d]+|))`)
 )
 
 func NewGitService() *GitService {
 	return &GitService{
 		Config: &GitConfig{
-			Code:   []byte("git"),
-			Path:   "./data/git",
-			Binary: "git",
-			Server: "http://localhost:8000",
+			Code:    []byte("git"),
+			DataDir: "./data/git",
+			Binary:  "git",
+			Server:  "http://localhost:8000",
+		},
+		Vault: &vault.Vault{
+			Algo: "no_op",
+			Driver: &vault.DriverFs{
+				Root: "./cache/git",
+			},
 		},
 	}
 }
 
 type GitConfig struct {
-	Server string
-	Code   []byte
-	Path   string
-	Binary string
+	Server  string
+	Code    []byte
+	DataDir string
+	Binary  string
 }
 
 type GitService struct {
 	DB     *bolt.DB
 	Config *GitConfig
 	Logger *log.Entry
+	Vault  *vault.Vault
 }
 
 func (gs *GitService) Init(app *goapp.App) error {
-	os.MkdirAll(string(filepath.Separator)+gs.Config.Path, 0755)
+	os.MkdirAll(string(filepath.Separator)+gs.Config.DataDir, 0755)
 
 	return nil
 }
 
 func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 	for {
-		select {
-		case <-state.In:
-			return nil
-		default:
-			gs.SyncServices()
+		gs.Logger.Info("Starting a new sync...")
 
-			gs.Logger.Info("Wait before starting a new sync...")
-			time.Sleep(1 * time.Second)
-		}
+		gs.SyncServices()
+
+		gs.Logger.Info("Wait before starting a new sync...")
+		time.Sleep(60 * time.Second)
 	}
 }
 
@@ -81,7 +88,7 @@ func (gs *GitService) End() error {
 func (gs *GitService) SyncServices() {
 	// require structure
 	// hostname/vendor/project.git
-	glob := fmt.Sprintf("%s/*", gs.Config.Path)
+	glob := fmt.Sprintf("%s/*", gs.Config.DataDir)
 	services, _ := filepath.Glob(glob)
 
 	gs.Logger.WithFields(log.Fields{
@@ -170,13 +177,73 @@ func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 }
 
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
+	if CACHEABLE_REF.Match([]byte(ref)) {
+		gs.cacheArchive(w, path, ref)
+	} else {
+		gs.writeArchive(w, path, ref)
+	}
+
+	return nil
+}
+
+func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 	logger := gs.Logger.WithFields(log.Fields{
 		"path":   path,
-		"action": "WriteArchive",
+		"ref":    ref,
+		"action": "cacheArchive",
+	})
+
+	vaultKey := fmt.Sprintf("%s/%s", path, ref)
+
+	if !gs.Vault.Has(vaultKey) {
+
+		logger.Info("Create vault entry")
+
+		var wg sync.WaitGroup
+
+		pr, pw := io.Pipe()
+		wg.Add(1)
+
+		go func() {
+			meta := vault.NewVaultMetadata()
+			meta["path"] = path
+			meta["ref"] = ref
+
+			if _, err := gs.Vault.Put(vaultKey, meta, pr); err != nil {
+				logger.WithError(err).Info("Error while writing into vault")
+			}
+			pr.Close()
+
+			wg.Done()
+		}()
+
+		defer pw.Close()
+
+		if err := gs.writeArchive(pw, path, ref); err != nil {
+			logger.WithError(err).Info("Error while writing archive")
+
+			return err
+		}
+
+		wg.Wait()
+	}
+
+	logger.Info("Read vault entry")
+	if _, err := gs.Vault.Get(vaultKey, w); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
+	logger := gs.Logger.WithFields(log.Fields{
+		"path":   path,
+		"action": "writeArchive",
 	})
 
 	cmd := exec.Command(gs.Config.Binary, "archive", "--format=zip", ref)
-	cmd.Dir = gs.Config.Path + string(filepath.Separator) + path
+	cmd.Dir = gs.Config.DataDir + string(filepath.Separator) + path
 
 	stdout, _ := cmd.StdoutPipe()
 
@@ -207,7 +274,7 @@ func (gs *GitService) WriteFile(w io.Writer, path string) error {
 		"action": "WriteFile",
 	})
 
-	if f, err := os.Open(gs.Config.Path + string(filepath.Separator) + path); err != nil {
+	if f, err := os.Open(gs.Config.DataDir + string(filepath.Separator) + path); err != nil {
 		logger.WithError(err).Error("Error while reading file from the fetch command")
 
 		return err

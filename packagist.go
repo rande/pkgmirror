@@ -77,12 +77,14 @@ func (ps *PackagistService) Serve(state *goapp.GoroutineState) error {
 	ps.Logger.Info("Starting Packagist Service")
 
 	for {
+		ps.Logger.Info("Starting a new sync...")
+
 		ps.SyncPackages()
 		ps.UpdateEntryPoints()
 		ps.CleanPackages()
 
 		ps.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(10 * time.Second)
+		time.Sleep(60 * time.Second)
 	}
 }
 
