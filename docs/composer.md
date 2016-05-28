@@ -62,10 +62,17 @@ Composer workflow
 Mirroring workflow
 ------------------
 
-1. Create a new bucket with the new data
-2. Load the packages.json file
-3. Iterate over the provider to build the package definition.
+1. Load the packages.json file
+2. Iterate over the providers.
 4. Download the package definition and 
     - alter path if required, 
     - compute new hash
-5. Update packages.json and providers.json to use the new hash and recompute the final hash for the provider
+    - store the package in data layer using bzip compression to save bandwidth and local storage.
+5. Update packages.json and providers.json to use the new hash and recompute the final hash for each provider.
+6. Clean old references
+
+Storage
+-------
+
+The storage layer uses [boltdb](https://github.com/boltdb/bolt). A packagist.org mirror is about 250MB on disk, 
+the file is located in the ``PATH/composer/packagist.db``. 

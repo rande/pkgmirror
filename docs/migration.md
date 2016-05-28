@@ -22,7 +22,7 @@ The new urls now are: ``http://newserver.com/git/github.com/doctrine/cache.git``
 Migration
 ---------
 
-You can update your ``composer.lock`` file by running the command : ``cat packages.lock | sed -e 's|http://oldserver.com/cache.php|https://newserver.com|' | sed -e 's|git@oldserver.com:/mirrors|https://newserver.com/git|'``.
+You can update your ``composer.lock`` file by running the command : ``cat packages.lock | sed -e 's|http://oldserver.com/cache.php|https://newserver.com/git|' | sed -e 's|git@oldserver.com:/mirrors|https://newserver.com/git|'``.
 
 If the output is ok, you can redirect the output to the ``composer.lock`` file
 
