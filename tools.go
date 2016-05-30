@@ -12,7 +12,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 )
+
 
 func LoadStruct(file string, v interface{}) error {
 	r, err := os.Open(file)
@@ -90,4 +92,66 @@ func Compress(data []byte) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func NewWorkerManager(process int, processCallback FuncProcess) *workerManager {
+	return &workerManager{
+		count:           process,
+		processCallback: processCallback,
+		add:             make(chan interface{}),
+		result:          make(chan interface{}),
+		wg:              sync.WaitGroup{},
+	}
+}
+
+type FuncProcess func(id int, data <-chan interface{}, result chan interface{})
+type FuncResult func(raw interface{})
+
+type workerManager struct {
+	add             chan interface{}
+	result          chan interface{}
+	count           int
+	lock            bool
+	processCallback FuncProcess
+	resultCallback  FuncResult
+	wg              sync.WaitGroup
+}
+
+func (dm *workerManager) Start() {
+	// force count to the number of worker
+	dm.wg.Add(dm.count)
+
+	for i := 0; i < dm.count; i++ {
+		go func(id int) {
+			dm.processCallback(id, dm.add, dm.result)
+			dm.wg.Done()
+		}(i)
+	}
+
+	if dm.resultCallback != nil {
+		// if we get result increment wg by one
+		go func() {
+			for raw := range dm.result {
+				dm.wg.Add(1)
+				dm.resultCallback(raw)
+				dm.wg.Done()
+			}
+		}()
+	}
+}
+
+func (dm *workerManager) Add(raw interface{}) {
+	dm.add <- raw
+}
+
+func (dm *workerManager) Wait() {
+	close(dm.add)
+
+	dm.wg.Wait()
+
+	close(dm.result)
+}
+
+func (dm *workerManager) ResultCallback(fn FuncResult) {
+	dm.resultCallback = fn
 }

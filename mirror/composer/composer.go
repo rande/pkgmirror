@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -44,12 +43,11 @@ func NewComposerService() *ComposerService {
 }
 
 type ComposerService struct {
-	DB              *bolt.DB
-	Config          *ComposerConfig
-	DownloadManager *DownloadManager
-	Logger          *log.Entry
-	GitConfig       *git.GitConfig
-	lock            bool
+	DB        *bolt.DB
+	Config    *ComposerConfig
+	Logger    *log.Entry
+	GitConfig *git.GitConfig
+	lock      bool
 }
 
 func (ps *ComposerService) Init(app *goapp.App) error {
@@ -99,31 +97,10 @@ func (ps *ComposerService) SyncPackages() error {
 
 	logger.Info("Starting SyncPackages")
 
-	dm := &DownloadManager{
-		Add:   make(chan PackageInformation),
-		Count: 10,
-		Done:  make(chan struct{}),
-	}
-	pr := &PackagesResult{}
+	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
+		for raw := range data {
+			pkg := raw.(PackageInformation)
 
-	logger.Info("Loading packages.json")
-
-	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
-		logger.WithFields(log.Fields{
-			"path":  "packages.json",
-			"error": err.Error(),
-		}).Error("Error loading packages.json")
-
-		return err // an error occurs avoid empty file
-	}
-
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-
-	PackageListener := make(chan PackageInformation)
-
-	go dm.Wait(func(id int, pkgs <-chan PackageInformation) {
-		for pkg := range pkgs {
 			p := &PackageResult{}
 
 			cpt := 0
@@ -146,30 +123,31 @@ func (ps *ComposerService) SyncPackages() error {
 
 			pkg.PackageResult = *p
 
-			PackageListener <- pkg
+			result <- pkg
 		}
 	})
 
-	go func() {
-		for {
-			select {
-			case pkg, valid := <-PackageListener:
+	dm.ResultCallback(func(data interface{}) {
+		pkg := data.(PackageInformation)
 
-				if !valid {
-					logger.Info("PackageListener is closed")
-					return
-				}
+		ps.savePackage(&pkg)
+	})
 
-				lock.Lock()
-				ps.savePackage(&pkg)
-				lock.Unlock()
+	dm.Start()
 
-				wg.Done()
-			}
-		}
-	}()
+	pr := &PackagesResult{}
 
 	logger.Info("Loading packages.json")
+
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
+		logger.WithFields(log.Fields{
+			"path":  "packages.json",
+			"error": err.Error(),
+		}).Error("Error loading packages.json")
+
+		return err // an error occurs avoid empty file
+	}
+
 	for provider, sha := range pr.ProviderIncludes {
 		path := strings.Replace(provider, "%hash%", sha.Sha256, -1)
 
@@ -201,7 +179,6 @@ func (ps *ComposerService) SyncPackages() error {
 
 			logger.Debug("Analysing package")
 
-			lock.Lock()
 			ps.DB.View(func(tx *bolt.Tx) error {
 				b := tx.Bucket(ps.Config.Code)
 				data := b.Get([]byte(p.Package))
@@ -216,13 +193,11 @@ func (ps *ComposerService) SyncPackages() error {
 
 				return nil
 			})
-			lock.Unlock()
 
 			if !p.Exist {
-				logger.Info("Add new package")
+				logger.Info("Add/Update new package")
 
-				wg.Add(1)
-				dm.Add <- p
+				dm.Add(p)
 			} else {
 				logger.Debug("Skipping package")
 			}
@@ -231,10 +206,7 @@ func (ps *ComposerService) SyncPackages() error {
 
 	logger.Info("Wait for download to complete")
 
-	wg.Wait()
-
-	close(PackageListener)
-	dm.Done <- struct{}{}
+	dm.Wait()
 
 	return nil
 }
@@ -292,7 +264,6 @@ func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
 // This method generates the different entry points required by a repository.
 //
 func (ps *ComposerService) UpdateEntryPoints() error {
-
 	if ps.lock {
 		return SyncInProgressError
 	}
