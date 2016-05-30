@@ -19,6 +19,8 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/gonode/core/vault"
 	"github.com/rande/pkgmirror"
+	"github.com/rande/pkgmirror/mirror/composer"
+	"github.com/rande/pkgmirror/mirror/git"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
@@ -111,9 +113,9 @@ func (c *ServerCommand) Run(args []string) int {
 		})
 
 		app.Set("mirror.packagist", func(app *goapp.App) interface{} {
-			s := pkgmirror.NewPackagistService()
+			s := composer.NewComposerService()
 			s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
-			s.GitConfig = app.Get("mirror.git").(*pkgmirror.GitService).Config
+			s.GitConfig = app.Get("mirror.git").(*git.GitService).Config
 			s.Logger = logger.WithFields(log.Fields{
 				"handler": "packagist",
 				"server":  s.Config.SourceServer,
@@ -124,7 +126,7 @@ func (c *ServerCommand) Run(args []string) int {
 		})
 
 		app.Set("mirror.git", func(app *goapp.App) interface{} {
-			s := pkgmirror.NewGitService()
+			s := git.NewGitService()
 			s.Config.Server = config.PublicServer
 			s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
 			s.Vault = &vault.Vault{
@@ -166,8 +168,8 @@ func (c *ServerCommand) Run(args []string) int {
 		c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
 
 		mux := app.Get("mux").(*goji.Mux)
-		packagist := app.Get("mirror.packagist").(*pkgmirror.PackagistService)
-		git := app.Get("mirror.git").(*pkgmirror.GitService)
+		packagist := app.Get("mirror.packagist").(*composer.ComposerService)
+		git := app.Get("mirror.git").(*git.GitService)
 
 		mux.HandleFuncC(pat.Get("/packagist/packages.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			if data, err := packagist.Get("packages.json"); err != nil {

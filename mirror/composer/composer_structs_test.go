@@ -3,16 +3,17 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package pkgmirror
+package composer
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/rande/pkgmirror"
 )
 
 func LoadTestStruct(t *testing.T, file string, v interface{}) {
-	err := LoadStruct(file, v)
+	err := pkgmirror.LoadStruct(file, v)
 
 	assert.NoError(t, err)
 }
@@ -20,7 +21,7 @@ func LoadTestStruct(t *testing.T, file string, v interface{}) {
 func Test_Load_Packages(t *testing.T) {
 	p := &PackagesResult{}
 
-	LoadTestStruct(t, "./fixtures/packagist/packages.json", p)
+	LoadTestStruct(t, "../../fixtures/packagist/packages.json", p)
 
 	assert.Equal(t, "/downloads/", p.NotifyBatch)
 
@@ -30,7 +31,7 @@ func Test_Load_Packages(t *testing.T) {
 func Test_Load_Providers(t *testing.T) {
 	p := &ProvidersResult{}
 
-	LoadTestStruct(t, "./fixtures/packagist/p/provider-2013$370af0b17d1ec5b0325bdb0126c9007b69647fafe5df8b5ecf79241e09745841.json", p)
+	LoadTestStruct(t, "../../fixtures/packagist/p/provider-2013$370af0b17d1ec5b0325bdb0126c9007b69647fafe5df8b5ecf79241e09745841.json", p)
 
 	assert.Equal(t, 7585, len(p.Providers))
 }
@@ -38,7 +39,7 @@ func Test_Load_Providers(t *testing.T) {
 func Test_Load_Package(t *testing.T) {
 	p := &PackageResult{}
 
-	LoadTestStruct(t, "./fixtures/packagist/p/0n3s3c/baselibrary$3a3dbbc33805b6748f859e8f2c517355f42e2f6d4b71daad077794842dca280c.json", p)
+	LoadTestStruct(t, "../../fixtures/packagist/p/0n3s3c/baselibrary$3a3dbbc33805b6748f859e8f2c517355f42e2f6d4b71daad077794842dca280c.json", p)
 
 	assert.Equal(t, 1, len(p.Packages))
 	assert.Equal(t, 2, len(p.Packages["0n3s3c/baselibrary"]))

@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"sync"
 )
 
 func LoadStruct(file string, v interface{}) error {
@@ -56,43 +55,6 @@ func LoadRemoteStruct(url string, v interface{}) error {
 	}
 
 	return nil
-}
-
-type DownloadManager struct {
-	Add   chan PackageInformation
-	Count int
-	Done  chan struct{}
-}
-
-func (dm *DownloadManager) Wait(fn func(id int, urls <-chan PackageInformation)) {
-	var wg sync.WaitGroup
-
-	wg.Add(dm.Count)
-
-	pkgs := make(chan PackageInformation)
-
-	for i := 0; i < dm.Count; i++ {
-		go func(id int) {
-			fn(id, pkgs)
-			wg.Done()
-		}(i)
-	}
-
-	go func() {
-		// receive url
-		for {
-			select {
-			case pkg := <-dm.Add:
-				pkgs <- pkg
-
-			case <-dm.Done:
-				close(pkgs)
-				return
-			}
-		}
-	}()
-
-	wg.Wait()
 }
 
 func SendWithHttpCode(res http.ResponseWriter, code int, message string) {
