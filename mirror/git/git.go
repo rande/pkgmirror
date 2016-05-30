@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	BITBUCKET_ARCHIVE = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-]+)\/([\w-]+)\/get\/([\w]+)\.zip`)
-	GITHUB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/api\.([\w-\.]+)\/repos\/([\w-]+)\/([\w-]+)\/zipball\/([\w]+)`)
-	GITLAB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-]+)\/([\w-]+)\/repository\/archive.zip\?ref=([\w]+)`)
+	BITBUCKET_ARCHIVE = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w\.\d-]+)\/([\w-\.\d]+)\/get\/([\w]+)\.zip`)
+	GITHUB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/api\.([\w-\.]+)\/repos\/([\w\.\d-]+)\/([\w\.\d-]+)\/zipball\/([\w]+)`)
+	GITLAB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-\.\d]+)\/([\w-\.\d]+)\/repository\/archive.zip\?ref=([\w]+)`)
 
 	GIT_REPOSITORY = regexp.MustCompile(`^(((git|http(s|)):\/\/|git@))([\w-\.]+@|)([\w-\.]+)(\/|:)([\w-\.\/]+?)(\.git|)$`)
 	SVN_REPOSITORY = regexp.MustCompile(`(svn:\/\/(.*)|(.*)\.svn\.(.*))`)

@@ -21,8 +21,16 @@ func Test_Archive_Rewrite_Github(t *testing.T) {
 		Server: "https://mirrors.localhost",
 	}
 
-	path := GitRewriteArchive(conf, "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72")
-	assert.Equal(t, "https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", path)
+
+	values := []*Expectation{
+		{"https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
+		{"https://mirrors.localhost/git/github.com/kevinlebrun/colors.php/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/kevinlebrun/colors.php/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
+	}
+
+	for _, v := range values {
+		assert.Equal(t, v.Expected,  GitRewriteArchive(conf, v.Value))
+	}
+
 }
 
 func Test_Archive_Rewrite_Bitbucket(t *testing.T) {
