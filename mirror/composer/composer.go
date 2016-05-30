@@ -20,8 +20,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
-	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror"
+	"github.com/rande/pkgmirror/mirror/git"
 )
 
 var (

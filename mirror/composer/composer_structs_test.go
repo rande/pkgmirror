@@ -8,8 +8,8 @@ package composer
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/rande/pkgmirror"
+	"github.com/stretchr/testify/assert"
 )
 
 func LoadTestStruct(t *testing.T, file string, v interface{}) {
