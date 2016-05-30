@@ -117,7 +117,7 @@ func (c *ServerCommand) Run(args []string) int {
 			s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
 			s.GitConfig = app.Get("mirror.git").(*git.GitService).Config
 			s.Logger = logger.WithFields(log.Fields{
-				"handler": "packagist",
+				"handler": "composer",
 				"server":  s.Config.SourceServer,
 			})
 			s.Init(app)
@@ -170,6 +170,10 @@ func (c *ServerCommand) Run(args []string) int {
 		mux := app.Get("mux").(*goji.Mux)
 		composerService := app.Get("mirror.composer").(*composer.ComposerService)
 		gitService := app.Get("mirror.git").(*git.GitService)
+
+		mux.HandleFuncC(pat.Get("/packagist"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/packagist/packages.json", http.StatusMovedPermanently)
+		})
 
 		mux.HandleFuncC(pat.Get("/packagist/packages.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			if data, err := composerService.Get("packages.json"); err != nil {
