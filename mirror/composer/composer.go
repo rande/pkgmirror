@@ -6,8 +6,6 @@
 package composer
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -479,20 +477,16 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 		sha := sha256.Sum256(data)
 		pkg.HashTarget = hex.EncodeToString(sha[:])
 
-		// compress data for saving bytes ...
-		buf := bytes.NewBuffer([]byte(""))
-		if gz, err := gzip.NewWriterLevel(buf, gzip.BestCompression); err != nil {
-			logger.WithError(err).Error("Error while creating gzip writer")
-		} else {
-			if _, err := gz.Write(data); err != nil {
-				logger.WithError(err).Error("Error while writing gzip")
-			}
+		data, err := pkgmirror.Compress(data)
 
-			gz.Close()
+		if err != nil {
+			logger.WithError(err).Error("Unable to compress data")
+
+			return err
 		}
 
 		// store the path
-		if err := b.Put([]byte(pkg.GetTargetKey()), buf.Bytes()); err != nil {
+		if err := b.Put([]byte(pkg.GetTargetKey()), data); err != nil {
 			logger.WithError(err).Error("Error updating/creating definition")
 
 			return err

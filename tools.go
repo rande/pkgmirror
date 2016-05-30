@@ -7,6 +7,7 @@ package pkgmirror
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -73,4 +74,20 @@ func SendWithHttpCode(res http.ResponseWriter, code int, message string) {
 	})
 
 	res.Write(data)
+}
+
+func Compress(data []byte) ([]byte, error) {
+	// compress data for saving bytes ...
+	buf := bytes.NewBuffer([]byte(""))
+	if gz, err := gzip.NewWriterLevel(buf, gzip.BestCompression); err != nil {
+		return nil, err
+	} else {
+		if _, err := gz.Write(data); err != nil {
+			return nil, err
+		}
+
+		gz.Close()
+	}
+
+	return buf.Bytes(), nil
 }
