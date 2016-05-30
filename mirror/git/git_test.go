@@ -21,14 +21,13 @@ func Test_Archive_Rewrite_Github(t *testing.T) {
 		Server: "https://mirrors.localhost",
 	}
 
-
 	values := []*Expectation{
 		{"https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
-		{"https://mirrors.localhost/git/github.com/kevinlebrun/colors.php/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/kevinlebrun/colors.php/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
+		{"https://mirrors.localhost/git/github.com/kevinlebrun/colors.php/6d7140aeedef46c97c2324f09b752c599ef17dac.zip", "https://api.github.com/repos/kevinlebrun/colors.php/zipball/6d7140aeedef46c97c2324f09b752c599ef17dac"},
 	}
 
 	for _, v := range values {
-		assert.Equal(t, v.Expected,  GitRewriteArchive(conf, v.Value))
+		assert.Equal(t, v.Expected, GitRewriteArchive(conf, v.Value))
 	}
 
 }

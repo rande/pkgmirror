@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	PACKAGE_URL = regexp.MustCompile(`\/packagist\/p\/([^\/]*)\/([^\/]*)\$([^\/]*)\.json`)
+	PAT_PACKAGE_VERSION_URL     = regexp.MustCompile(`\/packagist\/p\/([^\/]*)\/([^\/]*)\$([^\/]*)\.json`)
+	PAT_PACKAGE_INFORMATION_URL = regexp.MustCompile(`\/packagist\/p\/([^\/]*)\/([^\/]*)(.json|)`)
 )
 
 func NewPackagePat() goji.Pattern {
@@ -26,10 +27,31 @@ type PackagePat struct {
 }
 
 func (pp *PackagePat) Match(ctx context.Context, r *http.Request) context.Context {
-	if results := PACKAGE_URL.FindStringSubmatch(r.URL.Path); len(results) == 0 {
+	if results := PAT_PACKAGE_VERSION_URL.FindStringSubmatch(r.URL.Path); len(results) == 0 {
 		return nil
 	} else {
 		return &packagePatMatch{ctx, results[1], results[2], results[3], "json"}
+	}
+}
+
+func NewPackageInfoPat() goji.Pattern {
+	return &PackageInfoPat{}
+}
+
+type PackageInfoPat struct {
+}
+
+func (pp *PackageInfoPat) Match(ctx context.Context, r *http.Request) context.Context {
+	if results := PAT_PACKAGE_INFORMATION_URL.FindStringSubmatch(r.URL.Path); len(results) == 0 {
+		return nil
+	} else {
+		format := "html"
+
+		if len(results[3]) > 0 {
+			format = results[3][1:]
+		}
+
+		return &packagePatMatch{ctx, results[1], results[2], "", format}
 	}
 }
 

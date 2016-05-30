@@ -182,7 +182,7 @@ func (c *ServerCommand) Run(args []string) int {
 
 		mux.HandleFuncC(pat.Get("/packagist/p/:ref.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			if data, err := composerService.Get(fmt.Sprintf("p/%s.json", pat.Param(ctx, "ref"))); err != nil {
-				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(data)
@@ -204,12 +204,23 @@ func (c *ServerCommand) Run(args []string) int {
 				return
 			}
 
-			if data, err := composerService.Get(fmt.Sprintf("%s", pkg)); err != nil {
+			if data, err := composerService.Get(pkg); err != nil {
 				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.Header().Set("Content-Encoding", "gzip")
 				w.Write(data)
+			}
+		})
+
+		mux.HandleFuncC(composer.NewPackageInfoPat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			if pi, err := composerService.GetPackage(fmt.Sprintf("%s/%s", pat.Param(ctx, "vendor"), pat.Param(ctx, "package"))); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
+			} else {
+				switch pat.Param(ctx, "format") {
+				case "html":
+					http.Redirect(w, r, fmt.Sprintf("/packagist/p/%s.json", pi.GetTargetKey()), http.StatusFound)
+				}
 			}
 		})
 

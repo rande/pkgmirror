@@ -244,6 +244,11 @@ func (ps *ComposerService) SyncPackages() error {
 func (ps *ComposerService) Get(key string) ([]byte, error) {
 	var data []byte
 
+	ps.Logger.WithFields(log.Fields{
+		"action": "Get",
+		"key":    key,
+	}).Info("Get raw data")
+
 	err := ps.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
 
@@ -261,6 +266,29 @@ func (ps *ComposerService) Get(key string) ([]byte, error) {
 	})
 
 	return data, err
+}
+
+func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
+	pi := &PackageInformation{}
+
+	ps.Logger.WithFields(log.Fields{
+		"action": "Get",
+		"key":    key,
+	}).Info("Get package data")
+
+	err := ps.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ps.Config.Code)
+
+		raw := b.Get([]byte(key))
+
+		if len(raw) == 0 {
+			return EmptyKeyError
+		}
+
+		return json.Unmarshal(raw, pi)
+	})
+
+	return pi, err
 }
 
 // This method generates the different entry points required by a repository.

@@ -38,3 +38,16 @@ func Test_Composer_Pat_Definition(t *testing.T) {
 	assert.Equal(t, "f8ef02dddbd0bb7f78a2775e7188415e128d7b147f2a5630784c75cfc46a1a7e", result.Value(pattern.Variable("ref")))
 	assert.Equal(t, "json", result.Value(pattern.Variable("format")))
 }
+
+func Test_Composer_Pat_PackageInformation(t *testing.T) {
+	p := &PackageInfoPat{}
+
+	c, r := mustReq("GET", "/packagist/p/kevinlebrun/colors.php")
+
+	result := p.Match(c, r)
+
+	assert.NotNil(t, result)
+	assert.Equal(t, "kevinlebrun", result.Value(pattern.Variable("vendor")))
+	assert.Equal(t, "colors.php", result.Value(pattern.Variable("package")))
+	assert.Equal(t, "html", result.Value(pattern.Variable("format")))
+}
