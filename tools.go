@@ -15,7 +15,6 @@ import (
 	"sync"
 )
 
-
 func LoadStruct(file string, v interface{}) error {
 	r, err := os.Open(file)
 
@@ -36,6 +35,21 @@ func LoadStruct(file string, v interface{}) error {
 }
 
 func LoadRemoteStruct(url string, v interface{}) error {
+	cpt := 0
+	for {
+		if err := loadRemoteStruct(url, v); err != nil {
+			cpt++
+
+			if cpt > 5 {
+				return err
+			}
+		} else {
+			return nil
+		}
+	}
+}
+
+func loadRemoteStruct(url string, v interface{}) error {
 	resp, err := http.Get(url)
 
 	if err != nil {
