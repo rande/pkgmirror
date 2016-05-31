@@ -196,7 +196,6 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 	vaultKey := fmt.Sprintf("%s/%s", path, ref)
 
 	if !gs.Vault.Has(vaultKey) {
-
 		logger.Info("Create vault entry")
 
 		var wg sync.WaitGroup
@@ -211,21 +210,29 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 
 			if _, err := gs.Vault.Put(vaultKey, meta, pr); err != nil {
 				logger.WithError(err).Info("Error while writing into vault")
+
+				gs.Vault.Remove(vaultKey)
 			}
-			pr.Close()
 
 			wg.Done()
 		}()
 
-		defer pw.Close()
-
 		if err := gs.writeArchive(pw, path, ref); err != nil {
 			logger.WithError(err).Info("Error while writing archive")
 
+			pw.Close()
+			pr.Close()
+
+			gs.Vault.Remove(vaultKey)
+
 			return err
+		} else {
+			pw.Close()
 		}
 
 		wg.Wait()
+
+		pr.Close()
 	}
 
 	logger.Info("Read vault entry")
