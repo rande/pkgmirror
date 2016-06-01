@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	GIT_PATTTERN_URL = regexp.MustCompile(`\/git\/(.*)\/([\w\d]{40})\.zip`)
+	GIT_PATTTERN_URL = regexp.MustCompile(`\/git\/(.*)\/([\w\d]{40}|(.*))\.zip`)
 )
 
 func NewGitPat() goji.Pattern {

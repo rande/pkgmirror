@@ -1,0 +1,458 @@
+{
+    "_id": "jsontocsv",
+    "_rev": "18-7c46aa7713ace70c5c2ff0f188a1afb0",
+    "name": "jsontocsv",
+    "description": "Convert lines of JSON data to CSV",
+    "dist-tags": {
+        "latest": "0.3.0"
+    },
+    "versions": {
+        "0.0.1": {
+            "name": "jsontocsv",
+            "version": "0.0.1",
+            "description": "Convert lines of JSON data to CSV",
+            "homepage": [
+                ""
+            ],
+            "repository": {
+                "type": "git",
+                "url": ""
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": "git@github.com:jprichardson/node-jsontocsv.git"
+                }
+            ],
+            "dependencies": {
+                "commander": "~1.1.1",
+                "byline": "~2.0.3",
+                "path-extra": "0.0.3",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "testutil": "~0.3.0",
+                "mocha": "*",
+                "string": "~1.1.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "mocha test"
+            },
+            "_id": "jsontocsv@0.0.1",
+            "dist": {
+                "shasum": "1486462cca9cd539a465f2519c4b6e995da1d39b",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.0.1.tgz"
+            },
+            "_npmVersion": "1.1.62",
+            "_npmUser": {
+                "name": "jp",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jp",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "directories": {}
+        },
+        "0.0.2": {
+            "name": "jsontocsv",
+            "version": "0.0.2",
+            "description": "Convert lines of JSON data to CSV",
+            "homepage": [
+                ""
+            ],
+            "repository": {
+                "type": "git",
+                "url": "git@github.com:jprichardson/node-jsontocsv.git"
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": ""
+                }
+            ],
+            "dependencies": {
+                "commander": "~1.1.1",
+                "byline": "~2.0.3",
+                "path-extra": "0.0.3",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "testutil": "~0.3.0",
+                "mocha": "*",
+                "string": "~1.1.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "mocha test"
+            },
+            "bin": {
+                "jsontocsv": "./bin/jsontocsv"
+            },
+            "_id": "jsontocsv@0.0.2",
+            "dist": {
+                "shasum": "85bcc9738d066f7a67250fbd1817c75e757d7711",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.0.2.tgz"
+            },
+            "_npmVersion": "1.1.62",
+            "_npmUser": {
+                "name": "jp",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jp",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "directories": {}
+        },
+        "0.1.0": {
+            "name": "jsontocsv",
+            "version": "0.1.0",
+            "description": "Convert lines of JSON data to CSV",
+            "repository": {
+                "type": "git",
+                "url": "git@github.com:jprichardson/jsontocsv.git"
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": ""
+                }
+            ],
+            "dependencies": {
+                "commander": "~2.0.0",
+                "byline": "~3.1.2",
+                "path-extra": "0.0.3",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "testutil": "~0.3.0",
+                "mocha": "*",
+                "string": "~1.1.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "mocha test"
+            },
+            "bin": {
+                "jsontocsv": "./bin/jsontocsv"
+            },
+            "_id": "jsontocsv@0.1.0",
+            "dist": {
+                "shasum": "ddf38abedeeea51c17ee2b3a0ad9df1a0417612c",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.1.0.tgz"
+            },
+            "_from": ".",
+            "_npmVersion": "1.2.17",
+            "_npmUser": {
+                "name": "jp",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jp",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "directories": {}
+        },
+        "0.1.1": {
+            "name": "jsontocsv",
+            "version": "0.1.1",
+            "description": "Convert lines of JSON data to CSV",
+            "repository": {
+                "type": "git",
+                "url": "git@github.com:jprichardson/jsontocsv.git"
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": ""
+                }
+            ],
+            "dependencies": {
+                "commander": "~2.0.0",
+                "byline": "~3.1.2",
+                "path-extra": "0.0.3",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "testutil": "~0.3.0",
+                "mocha": "*",
+                "string": "~1.1.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "mocha test"
+            },
+            "bin": {
+                "jsontocsv": "./bin/jsontocsv"
+            },
+            "bugs": {
+                "url": "https://github.com/jprichardson/jsontocsv/issues"
+            },
+            "_id": "jsontocsv@0.1.1",
+            "dist": {
+                "shasum": "883d4288310566d31834779dbd892742a30dc911",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.1.1.tgz"
+            },
+            "_from": ".",
+            "_npmVersion": "1.3.11",
+            "_npmUser": {
+                "name": "jp",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jp",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "directories": {}
+        },
+        "0.2.0": {
+            "name": "jsontocsv",
+            "version": "0.2.0",
+            "description": "Convert lines of JSON data to CSV",
+            "repository": {
+                "type": "git",
+                "url": "git@github.com:jprichardson/jsontocsv.git"
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": ""
+                }
+            ],
+            "dependencies": {
+                "byline": "^4.2.1",
+                "commander": "~2.0.0",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "fs-extra": "^0.18.1",
+                "mocha": "*",
+                "standard": "^3.6.1",
+                "string": "~1.1.0",
+                "terst": "^0.3.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "standard && mocha test"
+            },
+            "bin": {
+                "jsontocsv": "./bin/jsontocsv"
+            },
+            "gitHead": "338180d77372942ee0e4b5b8f16992e159ed2bd0",
+            "bugs": {
+                "url": "https://github.com/jprichardson/jsontocsv/issues"
+            },
+            "homepage": "https://github.com/jprichardson/jsontocsv",
+            "_id": "jsontocsv@0.2.0",
+            "_shasum": "430e3f089271edf4fb48193b989067d64aaa24e4",
+            "_from": ".",
+            "_npmVersion": "2.3.0",
+            "_nodeVersion": "0.10.32",
+            "_npmUser": {
+                "name": "jprichardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jprichardson",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "dist": {
+                "shasum": "430e3f089271edf4fb48193b989067d64aaa24e4",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.2.0.tgz"
+            },
+            "directories": {}
+        },
+        "0.3.0": {
+            "name": "jsontocsv",
+            "version": "0.3.0",
+            "description": "Convert lines of JSON data to CSV",
+            "repository": {
+                "type": "git",
+                "url": "git+ssh://git@github.com/jprichardson/jsontocsv.git"
+            },
+            "keywords": [
+                "json",
+                "csv",
+                "parse",
+                "convert",
+                "text",
+                "line",
+                "lines"
+            ],
+            "author": {
+                "name": "JP Richardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "licenses": [
+                {
+                    "type": "MIT",
+                    "url": ""
+                }
+            ],
+            "dependencies": {
+                "byline": "^4.2.1",
+                "commander": "~2.0.0",
+                "nextflow": "~0.3.0"
+            },
+            "devDependencies": {
+                "fs-extra": "^0.18.1",
+                "mocha": "*",
+                "standard": "^3.6.1",
+                "string": "~1.1.0",
+                "terst": "^0.3.0"
+            },
+            "main": "./lib/jsontocsv.js",
+            "scripts": {
+                "test": "standard && mocha test"
+            },
+            "bin": {
+                "jsontocsv": "./bin/jsontocsv"
+            },
+            "gitHead": "d5a5569d7e7a7d60471e1f84468d97ea4c9ad343",
+            "bugs": {
+                "url": "https://github.com/jprichardson/jsontocsv/issues"
+            },
+            "homepage": "https://github.com/jprichardson/jsontocsv#readme",
+            "_id": "jsontocsv@0.3.0",
+            "_shasum": "b53b6695bcf923adb442c02572b114fda9162faf",
+            "_from": ".",
+            "_npmVersion": "3.5.2",
+            "_nodeVersion": "5.3.0",
+            "_npmUser": {
+                "name": "jprichardson",
+                "email": "jprichardson@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "jprichardson",
+                    "email": "jprichardson@gmail.com"
+                }
+            ],
+            "dist": {
+                "shasum": "b53b6695bcf923adb442c02572b114fda9162faf",
+                "tarball": "https://registry.npmjs.org/jsontocsv/-/jsontocsv-0.3.0.tgz"
+            },
+            "directories": {}
+        }
+    },
+    "readme": "Node.js - jsontocsv\n================\n\nConvert lines of JSON data to CSV.\n\n\nWhy?\n----\n\nIt's very convenient to write Node.js scripts that dump out a serialized object to a line. Most text processing utilities though cannot handle data like this. However, many can handle CSV files.\n\n\n\nInstallation\n------------\n\n    npm install jsontocsv\n\n\n\nProgrammatically\n------\n\n```javascript\nvar jsontocsv = require('jsontocsv')\n\njsontocsv(inputStream, outputStream, {header: false, whitelist: whitelistFields, separator: ','}, function (err) {\n  if (!err) console.log('Success.')\n});\n\n```\n\nThe separator is ',' as default.\n\nCommand Line\n------------\n\n      Usage: jsontocsv [options]\n\n      Options:\n\n        -h, --help                 output usage information\n        -V, --version              output the version number\n        -b, --blacklist [fields]   Prevent blacklisted fields from output, otherwise all will be used.\n        -w, --whitelist [fields]   Only allow whitelisted fields in output, otherwise all will be used.\n        -i, --input [file]         Input file. Otherwise STDIN.\n        -o, --output [file]        Output file. Otherwise STDOUT.\n        -h, --header [true/false]  If set to the true, the CSV header will be output. Defaults to true.\n\n\nHacking on `jsontocsv`\n----------------------\n\n[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)\n\n\n\nAlternatives Node.js Packages:\n------------------------------\n- [json2csv](https://github.com/zeMirco/json2csv)\n- [jsoncsv](https://github.com/gradus/jsoncsv)\n\n\n\nLicense\n-------\n\n(MIT License)\n\nCopyright 2013, JP Richardson  <jprichardson@gmail.com>\n\n\n",
+    "maintainers": [
+        {
+            "name": "jprichardson",
+            "email": "jprichardson@gmail.com"
+        }
+    ],
+    "time": {
+        "modified": "2016-01-06T14:23:20.196Z",
+        "created": "2013-01-15T19:02:14.129Z",
+        "0.0.1": "2013-01-15T19:02:14.759Z",
+        "0.0.2": "2013-01-22T18:45:26.918Z",
+        "0.1.0": "2013-10-18T12:36:50.456Z",
+        "0.1.1": "2013-11-19T00:53:13.376Z",
+        "0.2.0": "2015-04-16T19:29:59.840Z",
+        "0.3.0": "2016-01-06T14:23:20.196Z"
+    },
+    "author": {
+        "name": "JP Richardson",
+        "email": "jprichardson@gmail.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/jprichardson/jsontocsv.git"
+    },
+    "keywords": [
+        "json",
+        "csv",
+        "parse",
+        "convert",
+        "text",
+        "line",
+        "lines"
+    ],
+    "bugs": {
+        "url": "https://github.com/jprichardson/jsontocsv/issues"
+    },
+    "readmeFilename": "README.md",
+    "homepage": "https://github.com/jprichardson/jsontocsv#readme",
+    "users": {
+        "jmharrington11": true
+    },
+    "_attachments": {}
+}

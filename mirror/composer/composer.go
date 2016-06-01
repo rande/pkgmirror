@@ -9,7 +9,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -19,11 +18,6 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/mirror/git"
-)
-
-var (
-	SyncInProgressError = errors.New("A synchronization is already running")
-	EmptyKeyError       = errors.New("No value available")
 )
 
 type ComposerConfig struct {
@@ -82,7 +76,7 @@ func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 		ps.CleanPackages()
 
 		ps.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(60 * time.Second)
+		time.Sleep(60 * 15 * time.Second)
 	}
 }
 
@@ -221,7 +215,7 @@ func (ps *ComposerService) Get(key string) ([]byte, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
-			return EmptyKeyError
+			return pkgmirror.EmptyKeyError
 		}
 
 		data = make([]byte, len(raw))
@@ -248,7 +242,7 @@ func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
-			return EmptyKeyError
+			return pkgmirror.EmptyKeyError
 		}
 
 		return json.Unmarshal(raw, pi)
@@ -261,7 +255,7 @@ func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
 //
 func (ps *ComposerService) UpdateEntryPoints() error {
 	if ps.lock {
-		return SyncInProgressError
+		return pkgmirror.SyncInProgressError
 	}
 
 	ps.lock = true
@@ -376,7 +370,7 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 
 func (ps *ComposerService) UpdatePackage(name string) error {
 	if ps.lock {
-		return SyncInProgressError
+		return pkgmirror.SyncInProgressError
 	}
 
 	if i := strings.Index(name, "$"); i > 0 {

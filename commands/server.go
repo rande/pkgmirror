@@ -21,6 +21,7 @@ import (
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
+	"github.com/rande/pkgmirror/mirror/npm"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
@@ -125,6 +126,25 @@ func (c *ServerCommand) Run(args []string) int {
 			return s
 		})
 
+		app.Set("mirror.npm", func(app *goapp.App) interface{} {
+			s := npm.NewNpmService()
+			s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
+			s.Config.PublicServer = config.PublicServer
+			s.Logger = logger.WithFields(log.Fields{
+				"handler": "npm",
+				"server":  s.Config.SourceServer,
+			})
+			s.Vault = &vault.Vault{
+				Algo: "no_op",
+				Driver: &vault.DriverFs{
+					Root: fmt.Sprintf("%s/npm/packages", config.DataDir),
+				},
+			}
+			s.Init(app)
+
+			return s
+		})
+
 		app.Set("mirror.git", func(app *goapp.App) interface{} {
 			s := git.NewGitService()
 			s.Config.Server = config.PublicServer
@@ -165,11 +185,21 @@ func (c *ServerCommand) Run(args []string) int {
 	})
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
+		c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
+
+		s := app.Get("mirror.npm").(pkgmirror.MirrorService)
+		s.Serve(state)
+
+		return nil
+	})
+
+	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
 
 		mux := app.Get("mux").(*goji.Mux)
 		composerService := app.Get("mirror.composer").(*composer.ComposerService)
 		gitService := app.Get("mirror.git").(*git.GitService)
+		npmService := app.Get("mirror.npm").(*npm.NpmService)
 
 		mux.HandleFuncC(pat.Get("/packagist"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/packagist/packages.json", http.StatusMovedPermanently)
@@ -189,6 +219,33 @@ func (c *ServerCommand) Run(args []string) int {
 				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
+				w.Write(data)
+			}
+		})
+
+		mux.HandleFuncC(npm.NewArchivePat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := pat.Param(ctx, "package")
+			version := pat.Param(ctx, "version")
+
+			logger.WithFields(log.Fields{
+				"package": pkg,
+				"version": version,
+			}).Info("Zip archive")
+
+			w.Header().Set("Content-Type", "Content-Type: application/octet-stream")
+			if err := npmService.WriteArchive(w, pkg, version); err != nil {
+				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+			}
+		})
+
+		mux.HandleFuncC(pat.Get("/npm/*"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := r.URL.Path[5:]
+
+			if data, err := npmService.Get(pkg); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Encoding", "gzip")
 				w.Write(data)
 			}
 		})
