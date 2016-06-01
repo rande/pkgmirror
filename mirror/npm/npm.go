@@ -11,10 +11,8 @@ import (
 	"regexp"
 	"sync"
 	"time"
-
 	"io"
 	"net/http"
-
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -127,10 +125,6 @@ func (ns *NpmService) SyncPackages() error {
 		logger.WithError(err).Error("Unable to load all npm packages")
 	}
 
-	total_packages := len(p)
-	packages_to_process := 0
-	packages_processed := 0
-
 	logger.WithFields(log.Fields{
 		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
 	}).Info("End loading packages's metadata")
@@ -164,14 +158,7 @@ func (ns *NpmService) SyncPackages() error {
 	})
 
 	dm.ResultCallback(func(data interface{}) {
-		packages_processed++
-
 		pkg := data.(ShortPackageDefinition)
-		logger.WithFields(log.Fields{
-			"total_packages":      total_packages,
-			"packages_to_process": packages_to_process,
-			"packages_processed":  packages_processed,
-		}).Debug("Status package")
 
 		ns.savePackage(&pkg)
 	})
@@ -208,8 +195,6 @@ func (ns *NpmService) SyncPackages() error {
 			return nil
 		})
 
-		packages_to_process++
-
 		if store {
 			logger.WithFields(log.Fields{
 				"package": name,
@@ -217,10 +202,9 @@ func (ns *NpmService) SyncPackages() error {
 
 			dm.Add(*sp)
 		} else {
-			packages_processed++
 			logger.WithFields(log.Fields{
 				"package": name,
-			}).Info("Skip package")
+			}).Debug("Skip package")
 		}
 	}
 
