@@ -19,6 +19,9 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/gonode/core/vault"
 	"github.com/rande/pkgmirror"
+	"github.com/rande/pkgmirror/mirror/composer"
+	"github.com/rande/pkgmirror/mirror/git"
+	"github.com/rande/pkgmirror/mirror/npm"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
@@ -110,12 +113,12 @@ func (c *ServerCommand) Run(args []string) int {
 			return logger
 		})
 
-		app.Set("mirror.packagist", func(app *goapp.App) interface{} {
-			s := pkgmirror.NewPackagistService()
+		app.Set("mirror.composer", func(app *goapp.App) interface{} {
+			s := composer.NewComposerService()
 			s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
-			s.GitConfig = app.Get("mirror.git").(*pkgmirror.GitService).Config
+			s.GitConfig = app.Get("mirror.git").(*git.GitService).Config
 			s.Logger = logger.WithFields(log.Fields{
-				"handler": "packagist",
+				"handler": "composer",
 				"server":  s.Config.SourceServer,
 			})
 			s.Init(app)
@@ -123,8 +126,27 @@ func (c *ServerCommand) Run(args []string) int {
 			return s
 		})
 
+		app.Set("mirror.npm", func(app *goapp.App) interface{} {
+			s := npm.NewNpmService()
+			s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
+			s.Config.PublicServer = config.PublicServer
+			s.Logger = logger.WithFields(log.Fields{
+				"handler": "npm",
+				"server":  s.Config.SourceServer,
+			})
+			s.Vault = &vault.Vault{
+				Algo: "no_op",
+				Driver: &vault.DriverFs{
+					Root: fmt.Sprintf("%s/npm/packages", config.DataDir),
+				},
+			}
+			s.Init(app)
+
+			return s
+		})
+
 		app.Set("mirror.git", func(app *goapp.App) interface{} {
-			s := pkgmirror.NewGitService()
+			s := git.NewGitService()
 			s.Config.Server = config.PublicServer
 			s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
 			s.Vault = &vault.Vault{
@@ -147,7 +169,7 @@ func (c *ServerCommand) Run(args []string) int {
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		c.Ui.Info(fmt.Sprintf("Start Composer Sync (ref: %s/packagist)", config.PublicServer))
 
-		s := app.Get("mirror.packagist").(pkgmirror.MirrorService)
+		s := app.Get("mirror.composer").(pkgmirror.MirrorService)
 		s.Serve(state)
 
 		return nil
@@ -163,14 +185,28 @@ func (c *ServerCommand) Run(args []string) int {
 	})
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
+		c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
+
+		s := app.Get("mirror.npm").(pkgmirror.MirrorService)
+		s.Serve(state)
+
+		return nil
+	})
+
+	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
 
 		mux := app.Get("mux").(*goji.Mux)
-		packagist := app.Get("mirror.packagist").(*pkgmirror.PackagistService)
-		git := app.Get("mirror.git").(*pkgmirror.GitService)
+		composerService := app.Get("mirror.composer").(*composer.ComposerService)
+		gitService := app.Get("mirror.git").(*git.GitService)
+		npmService := app.Get("mirror.npm").(*npm.NpmService)
+
+		mux.HandleFuncC(pat.Get("/packagist"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/packagist/packages.json", http.StatusMovedPermanently)
+		})
 
 		mux.HandleFuncC(pat.Get("/packagist/packages.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			if data, err := packagist.Get("packages.json"); err != nil {
+			if data, err := composerService.Get("packages.json"); err != nil {
 				pkgmirror.SendWithHttpCode(w, 500, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
@@ -179,30 +215,33 @@ func (c *ServerCommand) Run(args []string) int {
 		})
 
 		mux.HandleFuncC(pat.Get("/packagist/p/:ref.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			if data, err := packagist.Get(fmt.Sprintf("p/%s.json", pat.Param(ctx, "ref"))); err != nil {
-				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+			if data, err := composerService.Get(fmt.Sprintf("p/%s.json", pat.Param(ctx, "ref"))); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(data)
 			}
 		})
 
-		mux.HandleFuncC(pat.Get("/packagist/p/:vendor/:package.json"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			pkg := fmt.Sprintf("%s/%s", pat.Param(ctx, "vendor"), pat.Param(ctx, "package"))
+		mux.HandleFuncC(npm.NewArchivePat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := pat.Param(ctx, "package")
+			version := pat.Param(ctx, "version")
 
-			if refresh := r.FormValue("refresh"); len(refresh) > 0 {
-				w.Header().Set("Content-Type", "application/json")
+			logger.WithFields(log.Fields{
+				"package": pkg,
+				"version": version,
+			}).Info("Zip archive")
 
-				if err := packagist.UpdatePackage(pkg); err != nil {
-					pkgmirror.SendWithHttpCode(w, 500, err.Error())
-				} else {
-					pkgmirror.SendWithHttpCode(w, 200, "Package updated")
-				}
-
-				return
+			w.Header().Set("Content-Type", "Content-Type: application/octet-stream")
+			if err := npmService.WriteArchive(w, pkg, version); err != nil {
+				pkgmirror.SendWithHttpCode(w, 500, err.Error())
 			}
+		})
 
-			if data, err := packagist.Get(fmt.Sprintf("%s", pkg)); err != nil {
+		mux.HandleFuncC(pat.Get("/npm/*"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := r.URL.Path[5:]
+
+			if data, err := npmService.Get(pkg); err != nil {
 				pkgmirror.SendWithHttpCode(w, 404, err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
@@ -211,23 +250,52 @@ func (c *ServerCommand) Run(args []string) int {
 			}
 		})
 
-		mux.HandleFuncC(pat.Get("/git/:hostname/:vendor/:package/:ref.zip"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			hostname := pat.Param(ctx, "hostname")
-			pkg := pat.Param(ctx, "package")
-			vendor := pat.Param(ctx, "vendor")
+		mux.HandleFuncC(composer.NewPackagePat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			pkg := fmt.Sprintf("%s/%s$%s", pat.Param(ctx, "vendor"), pat.Param(ctx, "package"), pat.Param(ctx, "ref"))
+
+			if refresh := r.FormValue("refresh"); len(refresh) > 0 {
+				w.Header().Set("Content-Type", "application/json")
+
+				if err := composerService.UpdatePackage(pkg); err != nil {
+					pkgmirror.SendWithHttpCode(w, 500, err.Error())
+				} else {
+					pkgmirror.SendWithHttpCode(w, 200, "Package updated")
+				}
+
+				return
+			}
+
+			if data, err := composerService.Get(pkg); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Encoding", "gzip")
+				w.Write(data)
+			}
+		})
+
+		mux.HandleFuncC(composer.NewPackageInfoPat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			if pi, err := composerService.GetPackage(fmt.Sprintf("%s/%s", pat.Param(ctx, "vendor"), pat.Param(ctx, "package"))); err != nil {
+				pkgmirror.SendWithHttpCode(w, 404, err.Error())
+			} else {
+				switch pat.Param(ctx, "format") {
+				case "html":
+					http.Redirect(w, r, fmt.Sprintf("/packagist/p/%s.json", pi.GetTargetKey()), http.StatusFound)
+				}
+			}
+		})
+
+		mux.HandleFuncC(git.NewGitPat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			path := pat.Param(ctx, "path")
 			ref := pat.Param(ctx, "ref")
 
 			logger.WithFields(log.Fields{
-				"hostname": hostname,
-				"package":  pkg,
-				"vendor":   vendor,
-				"ref":      ref,
+				"path": path,
+				"ref":  ref,
 			}).Info("Zip archive")
 
-			path := fmt.Sprintf("%s/%s/%s.git", hostname, vendor, pkg)
-
 			w.Header().Set("Content-Type", "application/zip")
-			if err := git.WriteArchive(w, path, ref); err != nil {
+			if err := gitService.WriteArchive(w, fmt.Sprintf("%s.git", path), ref); err != nil {
 				pkgmirror.SendWithHttpCode(w, 500, err.Error())
 			}
 		})
@@ -237,7 +305,7 @@ func (c *ServerCommand) Run(args []string) int {
 				"path": r.URL.Path[5:],
 			}).Info("Git fetch")
 
-			if err := git.WriteFile(w, r.URL.Path[5:]); err != nil {
+			if err := gitService.WriteFile(w, r.URL.Path[5:]); err != nil {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		})

@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package pkgmirror
+package git
 
 import (
 	"testing"
@@ -21,8 +21,15 @@ func Test_Archive_Rewrite_Github(t *testing.T) {
 		Server: "https://mirrors.localhost",
 	}
 
-	path := GitRewriteArchive(conf, "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72")
-	assert.Equal(t, "https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", path)
+	values := []*Expectation{
+		{"https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
+		{"https://mirrors.localhost/git/github.com/kevinlebrun/colors.php/6d7140aeedef46c97c2324f09b752c599ef17dac.zip", "https://api.github.com/repos/kevinlebrun/colors.php/zipball/6d7140aeedef46c97c2324f09b752c599ef17dac"},
+	}
+
+	for _, v := range values {
+		assert.Equal(t, v.Expected, GitRewriteArchive(conf, v.Value))
+	}
+
 }
 
 func Test_Archive_Rewrite_Bitbucket(t *testing.T) {

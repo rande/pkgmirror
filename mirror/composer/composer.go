@@ -3,39 +3,32 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package pkgmirror
+package composer
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
+	"github.com/rande/pkgmirror"
+	"github.com/rande/pkgmirror/mirror/git"
 )
 
-var (
-	SyncInProgressError = errors.New("A synchronization is already running")
-	EmptyKeyError       = errors.New("No value available")
-)
-
-type PackagistConfig struct {
+type ComposerConfig struct {
 	SourceServer string
 	Code         []byte
 	Path         string
 }
 
-func NewPackagistService() *PackagistService {
-	return &PackagistService{
-		Config: &PackagistConfig{
+func NewComposerService() *ComposerService {
+	return &ComposerService{
+		Config: &ComposerConfig{
 			SourceServer: "https://packagist.org",
 			Code:         []byte("packagist"),
 			Path:         "./data/composer",
@@ -43,16 +36,15 @@ func NewPackagistService() *PackagistService {
 	}
 }
 
-type PackagistService struct {
-	DB              *bolt.DB
-	Config          *PackagistConfig
-	DownloadManager *DownloadManager
-	Logger          *log.Entry
-	GitConfig       *GitConfig
-	lock            bool
+type ComposerService struct {
+	DB        *bolt.DB
+	Config    *ComposerConfig
+	Logger    *log.Entry
+	GitConfig *git.GitConfig
+	lock      bool
 }
 
-func (ps *PackagistService) Init(app *goapp.App) error {
+func (ps *ComposerService) Init(app *goapp.App) error {
 	var err error
 
 	ps.Logger.Info("Init")
@@ -73,8 +65,8 @@ func (ps *PackagistService) Init(app *goapp.App) error {
 	})
 }
 
-func (ps *PackagistService) Serve(state *goapp.GoroutineState) error {
-	ps.Logger.Info("Starting Packagist Service")
+func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
+	ps.Logger.Info("Starting Composer Service")
 
 	for {
 		ps.Logger.Info("Starting a new sync...")
@@ -84,31 +76,60 @@ func (ps *PackagistService) Serve(state *goapp.GoroutineState) error {
 		ps.CleanPackages()
 
 		ps.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(60 * time.Second)
+		time.Sleep(60 * 15 * time.Second)
 	}
 }
 
-func (ps *PackagistService) End() error {
+func (ps *ComposerService) End() error {
 	return nil
 }
 
-func (ps *PackagistService) SyncPackages() error {
+func (ps *ComposerService) SyncPackages() error {
 	logger := ps.Logger.WithFields(log.Fields{
 		"action": "SyncPackages",
 	})
 
 	logger.Info("Starting SyncPackages")
 
-	dm := &DownloadManager{
-		Add:   make(chan PackageInformation),
-		Count: 10,
-		Done:  make(chan struct{}),
-	}
+	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
+		for raw := range data {
+			pkg := raw.(PackageInformation)
+
+			p := &PackageResult{}
+
+			logger.WithFields(log.Fields{
+				"package": pkg.Package,
+				"worker":  id,
+			}).Debug("Load loading package information")
+
+			if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), p); err != nil {
+				logger.WithFields(log.Fields{
+					"package": pkg.Package,
+					"error":   err.Error(),
+				}).Error("Error loading package information")
+
+				continue
+			}
+
+			pkg.PackageResult = *p
+
+			result <- pkg
+		}
+	})
+
+	dm.ResultCallback(func(data interface{}) {
+		pkg := data.(PackageInformation)
+
+		ps.savePackage(&pkg)
+	})
+
+	dm.Start()
+
 	pr := &PackagesResult{}
 
 	logger.Info("Loading packages.json")
 
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
 		logger.WithFields(log.Fields{
 			"path":  "packages.json",
 			"error": err.Error(),
@@ -117,59 +138,6 @@ func (ps *PackagistService) SyncPackages() error {
 		return err // an error occurs avoid empty file
 	}
 
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-
-	PackageListener := make(chan PackageInformation)
-
-	go dm.Wait(func(id int, pkgs <-chan PackageInformation) {
-		for pkg := range pkgs {
-			p := &PackageResult{}
-
-			cpt := 0
-			for {
-				if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), p); err != nil {
-					logger.WithFields(log.Fields{
-						"package": pkg.Package,
-						"error":   err.Error(),
-					}).Error("Error loading package information")
-
-					cpt++
-
-					if cpt > 5 {
-						break
-					}
-				} else {
-					break
-				}
-			}
-
-			pkg.PackageResult = *p
-
-			PackageListener <- pkg
-		}
-	})
-
-	go func() {
-		for {
-			select {
-			case pkg, valid := <-PackageListener:
-
-				if !valid {
-					logger.Info("PackageListener is closed")
-					return
-				}
-
-				lock.Lock()
-				ps.savePackage(&pkg)
-				lock.Unlock()
-
-				wg.Done()
-			}
-		}
-	}()
-
-	logger.Info("Loading packages.json")
 	for provider, sha := range pr.ProviderIncludes {
 		path := strings.Replace(provider, "%hash%", sha.Sha256, -1)
 
@@ -182,7 +150,7 @@ func (ps *PackagistService) SyncPackages() error {
 
 		pr := &ProvidersResult{}
 
-		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, path), pr); err != nil {
+		if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, path), pr); err != nil {
 			logger.WithField("error", err.Error()).Error("Error loading provider information")
 		} else {
 			logger.Debug("End loading provider information")
@@ -201,7 +169,6 @@ func (ps *PackagistService) SyncPackages() error {
 
 			logger.Debug("Analysing package")
 
-			lock.Lock()
 			ps.DB.View(func(tx *bolt.Tx) error {
 				b := tx.Bucket(ps.Config.Code)
 				data := b.Get([]byte(p.Package))
@@ -216,13 +183,11 @@ func (ps *PackagistService) SyncPackages() error {
 
 				return nil
 			})
-			lock.Unlock()
 
 			if !p.Exist {
-				logger.Info("Add new package")
+				logger.Info("Add/Update new package")
 
-				wg.Add(1)
-				dm.Add <- p
+				dm.Add(p)
 			} else {
 				logger.Debug("Skipping package")
 			}
@@ -231,16 +196,18 @@ func (ps *PackagistService) SyncPackages() error {
 
 	logger.Info("Wait for download to complete")
 
-	wg.Wait()
-
-	close(PackageListener)
-	dm.Done <- struct{}{}
+	dm.Wait()
 
 	return nil
 }
 
-func (ps *PackagistService) Get(key string) ([]byte, error) {
+func (ps *ComposerService) Get(key string) ([]byte, error) {
 	var data []byte
+
+	ps.Logger.WithFields(log.Fields{
+		"action": "Get",
+		"key":    key,
+	}).Info("Get raw data")
 
 	err := ps.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
@@ -248,7 +215,7 @@ func (ps *PackagistService) Get(key string) ([]byte, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
-			return EmptyKeyError
+			return pkgmirror.EmptyKeyError
 		}
 
 		data = make([]byte, len(raw))
@@ -261,12 +228,34 @@ func (ps *PackagistService) Get(key string) ([]byte, error) {
 	return data, err
 }
 
+func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
+	pi := &PackageInformation{}
+
+	ps.Logger.WithFields(log.Fields{
+		"action": "Get",
+		"key":    key,
+	}).Info("Get package data")
+
+	err := ps.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ps.Config.Code)
+
+		raw := b.Get([]byte(key))
+
+		if len(raw) == 0 {
+			return pkgmirror.EmptyKeyError
+		}
+
+		return json.Unmarshal(raw, pi)
+	})
+
+	return pi, err
+}
+
 // This method generates the different entry points required by a repository.
 //
-func (ps *PackagistService) UpdateEntryPoints() error {
-
+func (ps *ComposerService) UpdateEntryPoints() error {
 	if ps.lock {
-		return SyncInProgressError
+		return pkgmirror.SyncInProgressError
 	}
 
 	ps.lock = true
@@ -282,7 +271,7 @@ func (ps *PackagistService) UpdateEntryPoints() error {
 	logger.Info("Start")
 
 	pkgResult := &PackagesResult{}
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pkgResult); err != nil {
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pkgResult); err != nil {
 		logger.WithFields(log.Fields{
 			"path":  "packages.json",
 			"error": err.Error(),
@@ -300,7 +289,7 @@ func (ps *PackagistService) UpdateEntryPoints() error {
 
 		logger.WithField("provider", provider).Info("Load provider")
 
-		if err := LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, strings.Replace(provider, "%hash%", sha.Sha256, -1)), pr); err != nil {
+		if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, strings.Replace(provider, "%hash%", sha.Sha256, -1)), pr); err != nil {
 			ps.Logger.WithField("error", err.Error()).Error("Error loading provider information")
 		}
 
@@ -379,9 +368,9 @@ func (ps *PackagistService) UpdateEntryPoints() error {
 	return nil
 }
 
-func (ps *PackagistService) UpdatePackage(name string) error {
+func (ps *ComposerService) UpdatePackage(name string) error {
 	if ps.lock {
-		return SyncInProgressError
+		return pkgmirror.SyncInProgressError
 	}
 
 	if i := strings.Index(name, "$"); i > 0 {
@@ -415,7 +404,7 @@ func (ps *PackagistService) UpdatePackage(name string) error {
 
 	pkg.PackageResult = PackageResult{}
 
-	if err := LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), &pkg.PackageResult); err != nil {
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), &pkg.PackageResult); err != nil {
 		ps.Logger.WithFields(log.Fields{
 			"package": pkg.Package,
 			"error":   err.Error(),
@@ -430,7 +419,7 @@ func (ps *PackagistService) UpdatePackage(name string) error {
 	return ps.UpdateEntryPoints()
 }
 
-func (ps *PackagistService) savePackage(pkg *PackageInformation) error {
+func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 	return ps.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
 
@@ -440,8 +429,8 @@ func (ps *PackagistService) savePackage(pkg *PackageInformation) error {
 		})
 
 		for _, version := range pkg.PackageResult.Packages[pkg.Package] {
-			version.Dist.URL = GitRewriteArchive(ps.GitConfig, version.Dist.URL)
-			version.Source.URL = GitRewriteRepository(ps.GitConfig, version.Source.URL)
+			version.Dist.URL = git.GitRewriteArchive(ps.GitConfig, version.Dist.URL)
+			version.Source.URL = git.GitRewriteRepository(ps.GitConfig, version.Source.URL)
 		}
 
 		// compute hash
@@ -449,20 +438,16 @@ func (ps *PackagistService) savePackage(pkg *PackageInformation) error {
 		sha := sha256.Sum256(data)
 		pkg.HashTarget = hex.EncodeToString(sha[:])
 
-		// compress data for saving bytes ...
-		buf := bytes.NewBuffer([]byte(""))
-		if gz, err := gzip.NewWriterLevel(buf, gzip.BestCompression); err != nil {
-			logger.WithError(err).Error("Error while creating gzip writer")
-		} else {
-			if _, err := gz.Write(data); err != nil {
-				logger.WithError(err).Error("Error while writing gzip")
-			}
+		data, err := pkgmirror.Compress(data)
 
-			gz.Close()
+		if err != nil {
+			logger.WithError(err).Error("Unable to compress data")
+
+			return err
 		}
 
 		// store the path
-		if err := b.Put([]byte(pkg.GetTargetKey()), buf.Bytes()); err != nil {
+		if err := b.Put([]byte(pkg.GetTargetKey()), data); err != nil {
 			logger.WithError(err).Error("Error updating/creating definition")
 
 			return err
@@ -480,7 +465,7 @@ func (ps *PackagistService) savePackage(pkg *PackageInformation) error {
 	})
 }
 
-func (ps *PackagistService) CleanPackages() error {
+func (ps *ComposerService) CleanPackages() error {
 
 	logger := ps.Logger.WithFields(log.Fields{
 		"action": "CleanPackages",

@@ -1,0 +1,79 @@
+{
+    "_id": "math_example_bulbignz",
+    "_rev": "2-5d5bd3e3170af30f145f6aa86599fecf",
+    "name": "math_example_bulbignz",
+    "description": "An example of creating a package",
+    "dist-tags": {
+        "latest": "0.0.0"
+    },
+    "versions": {
+        "0.0.0": {
+            "name": "math_example_bulbignz",
+            "version": "0.0.0",
+            "description": "An example of creating a package",
+            "main": "bin/main.js",
+            "scripts": {
+                "test": "echo \"Error: no test specified\" && exit 1"
+            },
+            "repository": "",
+            "keywords": [
+                "math",
+                "example",
+                "addition",
+                "substraction",
+                "mumtiplication",
+                "division",
+                "fibonacci"
+            ],
+            "author": {
+                "name": "BulbiGNZ"
+            },
+            "license": "ISC",
+            "_id": "math_example_bulbignz@0.0.0",
+            "dist": {
+                "shasum": "046c474d1f3ade30505328b22e834cb6d30b8d45",
+                "tarball": "https://registry.npmjs.org/math_example_bulbignz/-/math_example_bulbignz-0.0.0.tgz"
+            },
+            "_from": ".",
+            "_npmVersion": "1.4.3",
+            "_npmUser": {
+                "name": "bulbignz",
+                "email": "mario.vu@gmail.com"
+            },
+            "maintainers": [
+                {
+                    "name": "bulbignz",
+                    "email": "mario.vu@gmail.com"
+                }
+            ],
+            "directories": {}
+        }
+    },
+    "readme": "ï»¿math_example package\r\n====================\r\n\r\nblablabla\r\n- **addition** Adds two numbers and return the result.\r\n- etc.",
+    "maintainers": [
+        {
+            "name": "bulbignz",
+            "email": "mario.vu@gmail.com"
+        }
+    ],
+    "time": {
+        "modified": "2014-04-13T22:31:41.228Z",
+        "created": "2014-04-13T22:31:41.228Z",
+        "0.0.0": "2014-04-13T22:31:41.228Z"
+    },
+    "keywords": [
+        "math",
+        "example",
+        "addition",
+        "substraction",
+        "mumtiplication",
+        "division",
+        "fibonacci"
+    ],
+    "author": {
+        "name": "BulbiGNZ"
+    },
+    "license": "ISC",
+    "readmeFilename": "README.md",
+    "_attachments": {}
+}

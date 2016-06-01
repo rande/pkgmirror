@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package pkgmirror
+package git
 
 import (
 	"fmt"
@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	BITBUCKET_ARCHIVE = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-]+)\/([\w-]+)\/get\/([\w]+)\.zip`)
-	GITHUB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/api\.([\w-\.]+)\/repos\/([\w-]+)\/([\w-]+)\/zipball\/([\w]+)`)
-	GITLAB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-]+)\/([\w-]+)\/repository\/archive.zip\?ref=([\w]+)`)
+	BITBUCKET_ARCHIVE = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w\.\d-]+)\/([\w-\.\d]+)\/get\/([\w]+)\.zip`)
+	GITHUB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/api\.([\w-\.]+)\/repos\/([\w\.\d-]+)\/([\w\.\d-]+)\/zipball\/([\w]+)`)
+	GITLAB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-\.\d]+)\/([\w-\.\d]+)\/repository\/archive.zip\?ref=([\w]+)`)
 
 	GIT_REPOSITORY = regexp.MustCompile(`^(((git|http(s|)):\/\/|git@))([\w-\.]+@|)([\w-\.]+)(\/|:)([\w-\.\/]+?)(\.git|)$`)
 	SVN_REPOSITORY = regexp.MustCompile(`(svn:\/\/(.*)|(.*)\.svn\.(.*))`)
@@ -196,7 +196,6 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 	vaultKey := fmt.Sprintf("%s/%s", path, ref)
 
 	if !gs.Vault.Has(vaultKey) {
-
 		logger.Info("Create vault entry")
 
 		var wg sync.WaitGroup
@@ -211,21 +210,29 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 
 			if _, err := gs.Vault.Put(vaultKey, meta, pr); err != nil {
 				logger.WithError(err).Info("Error while writing into vault")
+
+				gs.Vault.Remove(vaultKey)
 			}
-			pr.Close()
 
 			wg.Done()
 		}()
 
-		defer pw.Close()
-
 		if err := gs.writeArchive(pw, path, ref); err != nil {
 			logger.WithError(err).Info("Error while writing archive")
 
+			pw.Close()
+			pr.Close()
+
+			gs.Vault.Remove(vaultKey)
+
 			return err
+		} else {
+			pw.Close()
 		}
 
 		wg.Wait()
+
+		pr.Close()
 	}
 
 	logger.Info("Read vault entry")

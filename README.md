@@ -23,4 +23,5 @@ Documentations
 
  * [Composer](docs/composer.md)
  * [Git](docs/git.md)
+ * [Npm](docs/npm.md)
  

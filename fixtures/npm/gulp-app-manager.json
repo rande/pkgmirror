@@ -1,0 +1,29 @@
+{
+    "_id": "gulp-app-manager",
+    "_rev": "6-b042b4d6432c241ca895208b47b6aee4",
+    "name": "gulp-app-manager",
+    "time": {
+        "modified": "2015-11-23T12:12:06.113Z",
+        "created": "2015-11-20T19:18:41.563Z",
+        "0.0.1": "2015-11-20T19:18:41.563Z",
+        "0.0.2": "2015-11-20T19:31:53.809Z",
+        "0.0.3": "2015-11-23T11:09:03.657Z",
+        "unpublished": {
+            "name": "ricardogobbosouza",
+            "time": "2015-11-23T12:12:18.460Z",
+            "tags": {
+                "latest": "0.0.3"
+            },
+            "maintainers": [
+                {
+                    "name": "ricardogobbosouza",
+                    "email": "ricardogobbosouza@yahoo.com.br"
+                }
+            ],
+            "versions": [
+                "0.0.3"
+            ]
+        }
+    },
+    "_attachments": {}
+}

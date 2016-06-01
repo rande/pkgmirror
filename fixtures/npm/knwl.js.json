@@ -1,0 +1,218 @@
+{
+    "_id": "knwl.js",
+    "_rev": "6-ce8691da1a50fd46b2b3b0fd4f888adb",
+    "name": "knwl.js",
+    "description": "Parse through text for specific information.",
+    "dist-tags": {
+        "latest": "1.0.2"
+    },
+    "versions": {
+        "0.0.1": {
+            "name": "knwl.js",
+            "description": "Parse through text for specific information.",
+            "version": "0.0.1",
+            "keywords": [
+                "data",
+                "tagging",
+                "parsing",
+                "language"
+            ],
+            "repository": {
+                "type": "git",
+                "url": "https://github.com/loadfive/Knwl.js.git"
+            },
+            "main": "knwl.js",
+            "author": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "engines": {
+                "node": "*"
+            },
+            "devDependencies": {
+                "browserify": "^10.2.3",
+                "jasmine-node": "^1.14.5",
+                "uglifyjs": "^2.4.10"
+            },
+            "scripts": {
+                "build": "scripts/build.sh",
+                "test": "scripts/test.sh"
+            },
+            "gitHead": "1e710f40f208018e6a23f4f4f9ba59dd06373979",
+            "bugs": {
+                "url": "https://github.com/loadfive/Knwl.js/issues"
+            },
+            "homepage": "https://github.com/loadfive/Knwl.js",
+            "_id": "knwl.js@0.0.1",
+            "_shasum": "75e5a7d09154cd13c495d87f780c38d216d3e078",
+            "_from": ".",
+            "_npmVersion": "1.4.28",
+            "_npmUser": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "maintainers": [
+                {
+                    "name": "loadfive",
+                    "email": "contact@loadfive.com"
+                }
+            ],
+            "dist": {
+                "shasum": "75e5a7d09154cd13c495d87f780c38d216d3e078",
+                "tarball": "https://registry.npmjs.org/knwl.js/-/knwl.js-0.0.1.tgz"
+            },
+            "directories": {}
+        },
+        "1.0.0": {
+            "name": "knwl.js",
+            "description": "Parse through text for specific information.",
+            "version": "1.0.0",
+            "keywords": [
+                "data",
+                "tagging",
+                "parsing",
+                "language"
+            ],
+            "repository": {
+                "type": "git",
+                "url": "https://github.com/loadfive/Knwl.js.git"
+            },
+            "main": "knwl.js",
+            "author": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "engines": {
+                "node": "*"
+            },
+            "devDependencies": {
+                "browserify": "^10.2.3",
+                "jasmine-node": "^1.14.5",
+                "uglifyjs": "^2.4.10"
+            },
+            "scripts": {
+                "build": "scripts/build.sh",
+                "test": "scripts/test.sh"
+            },
+            "gitHead": "1799d279cf37febcea66252e353dfcd1b3cfec94",
+            "bugs": {
+                "url": "https://github.com/loadfive/Knwl.js/issues"
+            },
+            "homepage": "https://github.com/loadfive/Knwl.js",
+            "_id": "knwl.js@1.0.0",
+            "_shasum": "3bfad9cb8dfbf4652b30674f68e3b2c0da703e72",
+            "_from": ".",
+            "_npmVersion": "1.4.28",
+            "_npmUser": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "maintainers": [
+                {
+                    "name": "loadfive",
+                    "email": "contact@loadfive.com"
+                }
+            ],
+            "dist": {
+                "shasum": "3bfad9cb8dfbf4652b30674f68e3b2c0da703e72",
+                "tarball": "https://registry.npmjs.org/knwl.js/-/knwl.js-1.0.0.tgz"
+            },
+            "directories": {}
+        },
+        "1.0.2": {
+            "name": "knwl.js",
+            "description": "Parse through text for specific information.",
+            "version": "1.0.2",
+            "keywords": [
+                "data",
+                "tagging",
+                "parsing",
+                "language"
+            ],
+            "repository": {
+                "type": "git",
+                "url": "https://github.com/loadfive/Knwl.js.git"
+            },
+            "main": "knwl.js",
+            "author": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "engines": {
+                "node": "*"
+            },
+            "devDependencies": {
+                "browserify": "^10.2.3",
+                "jasmine-node": "^1.14.5",
+                "uglifyjs": "^2.4.10"
+            },
+            "scripts": {
+                "build": "scripts/build.sh",
+                "test": "scripts/test.sh"
+            },
+            "gitHead": "cbefd0ed35af9a7fa9e606f75aebc1b67b4afcc5",
+            "bugs": {
+                "url": "https://github.com/loadfive/Knwl.js/issues"
+            },
+            "homepage": "https://github.com/loadfive/Knwl.js",
+            "_id": "knwl.js@1.0.2",
+            "_shasum": "b69c134cf633e12c3640d732c57f2266bf66f34d",
+            "_from": ".",
+            "_npmVersion": "1.4.28",
+            "_npmUser": {
+                "name": "loadfive",
+                "email": "contact@loadfive.com"
+            },
+            "maintainers": [
+                {
+                    "name": "loadfive",
+                    "email": "contact@loadfive.com"
+                }
+            ],
+            "dist": {
+                "shasum": "b69c134cf633e12c3640d732c57f2266bf66f34d",
+                "tarball": "https://registry.npmjs.org/knwl.js/-/knwl.js-1.0.2.tgz"
+            },
+            "directories": {}
+        }
+    },
+    "readme": "# Knwl.js\nKnwl.js is a Javascript library that parses through text for dates, times, phone numbers, emails, places, and more. \n\nParser plugins are what make Knwl.js tick and give it new parsing abilities. There are many already available under ```./default_plugins``` for a number of tasks.\nSoon, you'll be able to browse community created plugins all on one website (we're still working on this). If you're interested in developing plugins for Knwl.js, ```./plugin_development.md``` is a great place to start.\n\n### Check out a quick demo: http://loadfive.com/os/knwl/demo\n#### Google+ Community: https://plus.google.com/communities/108874785204246812675\n\n## Installation\n\nInstallation instructions are specific to whether you want to run Knwl.js in the browser, or on the server with Node.js.\n\n###For Node.js\n\n#### Install using ```npm```:\n\n```console\n\tnpm install knwl.js\n```\n\n1. Load the ```knwl``` module using ```require()``` and create a new Instance.\n\n\t```javascript\n\t\tvar Knwl = require(\"./knwl.js\");\n\t\t\n\t\tvar knwlInstance = new Knwl('english');\n\t```\n\t\n\tYou can optionally specify a language in the first parameter. This helps plugins identify and better suit particular languages.\n\n2. Load a parser plugin.\n\n\t```javascript\n\t\tknwlInstance.register('dates', require('./default_plugins/dates'));\n\t```\n\t\n\tThe first parameter is the desired label for the plugin. The second parameter is a ```require()``` call to load the plugin.\n\t\n\t*Note: The plugins in the ```./default_plugins``` directory will be loaded automatically.*\n\n###For the Browser\n\n**Note: A packaged version of Knwl.js for the browser with default plugins is available in the ```./dist``` directory.**\n\nThese steps require the ```npm``` package.\n\n1. Run ```npm install``` to install dependencies.\n\n2. ```browserify``` may be used to build a Knwl.js project from Node.js for the browser.\n\n\tUse the following syntax in the terminal:\n\t\n\t```console\n\t\t./node_modules/.bin/browserify script.js knwl.js > output.js\n\t```\n\t\n\tThe ```script.js``` file is the Node.js file you wish to package for the browser.\n\n## Usage Guide\n\nThese steps are the same regardless of whether Knwl.js is running on the server or client.\n\n3. Initiate Knwl.js on a String.\n\n\t``` javascript\n\tknwlInstance.init(\"This is a string. This was written on the 2nd of June, of 2015.\");\n\t```\n\t\n\tThis line runs the initial parser functions that\n\tprepare the String for plugins to use. **Plugins\n\twill not function without this method first being called\n\ton the String.**\n\t\n4. Initiate a plugin to parse the String.\n\t\n\t``` javascript\n\tvar dates = knwlInstance.get('dates');\n\t```\n\t\n\tThe first parameter of ```knwl.get()``` is the\n\tname of the parser plugin you're trying to access (make sure you've added the plugin's .js file to the header of the page).\n\tThe names of all default parser plugins are provided\n\t towards the end of this document. If you're using\n\tplugins other than the defaults, see their respective\n\tdocumentation.\n\t\n\tAnyways, if the parser plugin is found, ```knwl.get()``` will return\n\tan array of this format:\n\t\n\t```javascript\n\tvar results = [\n\t\t{ //result\n\t\t\t//plugin-specific properties\n\t\t\t\"preview\": \"This was written on the 2nd of June of 2015.\", //the sentence of rough location of the data from the String\n\t\t\t\"found\": integer //the position (in words) of the result in the String\n\t\t}\n\t]\n\t```\n\t\n\tFor example, here's what is returned from ```knwl.get('dates')``` when called on the previously mentioned String:\n\t\n\t```json\n\t[\n\t\t{\n\t\t\t\"year\": 2015,\n\t\t\t\"month\": 6,\n\t\t\t\"day\": 2,\n\t\t\t\"preview\": \"This was written on the 2nd of June of 2015.\",\n\t\t\t\"found\": 5\n\t\t}\n\t]\n\t```\n\n## Default Plugins\n\nThese are automatically loaded by default.\n\n###dates.js\n```javascript\nknwl.get('dates');\n\t\n\t//Returns any dates found in the String.\n```\n\n###times.js\n```javascript\nknwl.get('times');\n\t\n\t//Returns any times found in the String.\n\t\n```\n\n###phones.js\n```javascript\t\t\nknwl.get('phones')\n\n\t//Returns any phone numbers found in the String.\n\n```\n\n###links.js\n```javascript\nknwl.get('links')\n\n\t//Returns any links found in the String.\n\n```\n\n###emails.js\n```javascript\nknwl.get('emails')\n\t\n\t//Returns any email addresses found in the String.\n```\n\n### places.js\n```javascript\nknwl.get('places')\n\n\t//Returns any places found in the String.\n```\n\n## Experimental Plugins\n\n###Notice: These plugins have not been upgraded to the new syntax\n\nThese parser plugins are not as accurate as the default plugins. However,\nthey should be stable (they shouldn't crash the page) to use if you are willing to use them. They are considerably more static and rigid than default plugins.\n\nIn the future, some of these plugins may reach a level of accuracy that promotes them\nfrom experimental status to the default plugins. However, some will merely stay\nas experiments.\n\n###english.js\n```javascript\nknwl.get('english')\n\n\t//Returns the simple parts (verb, subject, etc.) of basic sentences found in the String.\n\t//WARNING: this is a rigid and simplistic plugin, thus it is merely an experiment.\n```\n###units.js\n```javascript\nknwl.get('units')\n\t\n\t//Returns any units (grams, pounds, etc.) found in the String.\n```\n##Developing Parser Plugins\n\nWhat's awesome about the new version of Knwl.js is that it makes it much easier\nfor anyone with a little knowledge of JS to build plugins. These plugins offer new\nparsing abilities for Knwl.js that otherwise wouldn't exist.\n\nIf you want to try your hand at building plugins for Knwl.js, we've\nprovided some documentation in ```plugin_development.md```.\n\n## Community Driven\n\nThe further development of this project was possible because of the\namazing community behind previous versions. Version 1.0 of Knwl.js marks a significant\nchange in the direction of Knwl.js to the very code-base.\n\nWe've restructured and rewritten portions of the project to facilitate\nplugin development, but also to drastically increase the performance. **Knwl.js 1.0 is significantly\n faster and more efficient than the previous iterations.**\nYet, in the process of the relaunch, certain past features have been put on hold. But\ndon't worry, plugins such as spam detection and emotion will return soon!\n\nWe think that overall, this is a step in the right direction.\n\nAs always, we invite you to re-engineer any part of Knwl.js (including the provided plugins) in an attempt\nto make them better. Let's do this together.\n\nYou can reach us at knwl@loadfive.com with any questions, comments,\nor raging complaints.\n\nhttp://loadfive.com/os/knwl\n",
+    "maintainers": [
+        {
+            "name": "loadfive",
+            "email": "contact@loadfive.com"
+        }
+    ],
+    "time": {
+        "modified": "2015-06-13T22:37:42.278Z",
+        "created": "2015-06-05T22:58:21.894Z",
+        "0.0.1": "2015-06-05T22:58:21.894Z",
+        "1.0.0": "2015-06-05T23:08:34.864Z",
+        "1.0.2": "2015-06-13T22:37:42.278Z"
+    },
+    "homepage": "https://github.com/loadfive/Knwl.js",
+    "keywords": [
+        "data",
+        "tagging",
+        "parsing",
+        "language"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/loadfive/Knwl.js.git"
+    },
+    "author": {
+        "name": "loadfive",
+        "email": "contact@loadfive.com"
+    },
+    "bugs": {
+        "url": "https://github.com/loadfive/Knwl.js/issues"
+    },
+    "readmeFilename": "README.md",
+    "users": {
+        "loadfive": true,
+        "calebmer": true,
+        "aitorllj93": true
+    },
+    "_attachments": {}
+}
