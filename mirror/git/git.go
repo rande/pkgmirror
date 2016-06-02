@@ -178,9 +178,9 @@ func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
 
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
 	if CACHEABLE_REF.Match([]byte(ref)) {
-		gs.cacheArchive(w, path, ref)
+		return gs.cacheArchive(w, path, ref)
 	} else {
-		gs.writeArchive(w, path, ref)
+		return gs.writeArchive(w, path, ref)
 	}
 
 	return nil
