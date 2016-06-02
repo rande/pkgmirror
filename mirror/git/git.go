@@ -101,13 +101,13 @@ func (gs *GitService) SyncServices() {
 	for _, path := range services {
 		wg.Add(1)
 
-		go gs.SyncRepositories(path, wg)
+		go gs.SyncRepositories(path, &wg)
 	}
 
 	wg.Wait()
 }
 
-func (gs *GitService) SyncRepositories(service string, wg sync.WaitGroup) {
+func (gs *GitService) SyncRepositories(service string, wg *sync.WaitGroup) {
 	gs.Logger.WithFields(log.Fields{
 		"action":  "SyncRepositories",
 		"service": service,
