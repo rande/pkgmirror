@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
-
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -182,8 +181,6 @@ func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
 	} else {
 		return gs.writeArchive(w, path, ref)
 	}
-
-	return nil
 }
 
 func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
