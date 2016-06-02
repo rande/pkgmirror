@@ -40,6 +40,7 @@ type Package struct {
 	Version           string   `json:"version"`
 	VersionNormalized string   `json:"version_normalized"`
 	License           []string `json:"license"`
+	Bin               []string `json:"bin"`
 	Authors           []struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
@@ -60,6 +61,7 @@ type Package struct {
 	Autoload      *json.RawMessage  `json:"autoload"`
 	Require       map[string]string `json:"require"`
 	RequireDevmap map[string]string `json:"require-dev"`
+	Suggest       map[string]string `json:"suggest"`
 	UID           int               `json:"uid"`
 }
 
