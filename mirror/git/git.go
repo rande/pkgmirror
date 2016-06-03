@@ -12,8 +12,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"time"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"

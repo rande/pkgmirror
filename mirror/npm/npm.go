@@ -8,12 +8,12 @@ package npm
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"sync"
-	"time"
 	"io"
 	"net/http"
 	"os"
+	"regexp"
+	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"

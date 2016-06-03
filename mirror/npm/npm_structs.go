@@ -36,30 +36,34 @@ type ShortPackageDefinition struct {
 }
 
 type PackageVersionDefinition struct {
-	Name            string           `json:"name,omitempty"`
-	Description     string           `json:"description,omitempty"`
-	Version         string           `json:"version,omitempty"`
-	Homepage        *json.RawMessage `json:"homepage,omitempty"`
-	Repository      *json.RawMessage `json:"repository,omitempty"`
-	Author          *json.RawMessage `json:"author,omitempty"`
-	Tags            *json.RawMessage `json:"tags,omitempty"`
-	Files           *json.RawMessage `json:"files,omitempty"`
-	Bin             *json.RawMessage `json:"bin,omitempty"`
-	Man             *json.RawMessage `json:"man,omitempty"`
-	Dependencies    *json.RawMessage `json:"dependencies,omitempty"`
-	DevDependencies *json.RawMessage `json:"devDependencies,omitempty"`
-	Scripts         *json.RawMessage `json:"scripts,omitempty"`
-	Engines         *json.RawMessage `json:"engines,omitempty"`
-	License         *json.RawMessage `json:"license,omitempty"`
-	GitHead         *json.RawMessage `json:"gitHead,omitempty"`
-	Bugs            *json.RawMessage `json:"bugs,omitempty"`
-	ID              *json.RawMessage `json:"_id,omitempty"`
-	Shasum          *json.RawMessage `json:"_shasum,omitempty"`
-	From            *json.RawMessage `json:"_from,omitempty"`
-	NpmVersion      *json.RawMessage `json:"_npmVersion,omitempty"`
-	NodeVersion     *json.RawMessage `json:"_nodeVersion,omitempty"`
-	NpmUser         *json.RawMessage `json:"_npmUser,omitempty"`
-	Maintainers     *json.RawMessage `json:"maintainers,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Description     string            `json:"description,omitempty"`
+	Version         string            `json:"version,omitempty"`
+	Homepage        *json.RawMessage  `json:"homepage,omitempty"`
+	Repository      *json.RawMessage  `json:"repository,omitempty"`
+	Contributors    *json.RawMessage  `json:"contributors,omitempty"`
+	Main            *json.RawMessage  `json:"main,omitempty"`
+	Licences        *json.RawMessage  `json:"licenses,omitempty"`
+	Author          *json.RawMessage  `json:"author,omitempty"`
+	Tags            *json.RawMessage  `json:"tags,omitempty"`
+	Files           *json.RawMessage  `json:"files,omitempty"`
+	Bin             *json.RawMessage  `json:"bin,omitempty"`
+	Man             *json.RawMessage  `json:"man,omitempty"`
+	Dependencies    *json.RawMessage  `json:"dependencies,omitempty"`
+	DevDependencies *json.RawMessage  `json:"devDependencies,omitempty"`
+	Scripts         *json.RawMessage  `json:"scripts,omitempty"`
+	Engines         map[string]string `json:"engines,omitempty"`
+	Gypfile         *json.RawMessage  `json:"gypfile,omitempty"`
+	License         *json.RawMessage  `json:"license,omitempty"`
+	GitHead         *json.RawMessage  `json:"gitHead,omitempty"`
+	Bugs            *json.RawMessage  `json:"bugs,omitempty"`
+	ID              *json.RawMessage  `json:"_id,omitempty"`
+	Shasum          *json.RawMessage  `json:"_shasum,omitempty"`
+	From            *json.RawMessage  `json:"_from,omitempty"`
+	NpmVersion      *json.RawMessage  `json:"_npmVersion,omitempty"`
+	NodeVersion     *json.RawMessage  `json:"_nodeVersion,omitempty"`
+	NpmUser         *json.RawMessage  `json:"_npmUser,omitempty"`
+	Maintainers     *json.RawMessage  `json:"maintainers,omitempty"`
 	Dist            struct {
 		Shasum  string `json:"shasum,omitempty"`
 		Tarball string `json:"tarball,omitempty"`
