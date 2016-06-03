@@ -107,21 +107,20 @@ func (ns *NpmService) SyncPackages() error {
 		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
 	}).Info("Load all packages")
 
-	f, _ := os.Create(fmt.Sprintf("%s/all.json", ns.Config.Path))
+	f, _ := os.Create(fmt.Sprintf("%s/all_%s.json", ns.Config.Path, string(ns.Config.Code)))
+	defer f.Close()
 
-	resp, err := http.Get(fmt.Sprintf("%s/-/all", ns.Config.SourceServer))
-
-	if err != nil {
+	if resp, err := http.Get(fmt.Sprintf("%s/-/all", ns.Config.SourceServer)); err != nil {
 		logger.WithError(err).Error("Unable to download npm packages")
 
 		return err
+	} else {
+		io.Copy(f, resp.Body)
+
+		resp.Body.Close()
 	}
 
-	io.Copy(f, resp.Body)
-
-	resp.Body.Close()
-
-	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/all.json", ns.Config.Path), &p); err != nil {
+	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/all_%s.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {
 		logger.WithError(err).Error("Unable to load all npm packages")
 	}
 
@@ -129,7 +128,7 @@ func (ns *NpmService) SyncPackages() error {
 		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
 	}).Info("End loading packages's metadata")
 
-	dm := pkgmirror.NewWorkerManager(40, func(id int, data <-chan interface{}, result chan interface{}) {
+	dm := pkgmirror.NewWorkerManager(60, func(id int, data <-chan interface{}, result chan interface{}) {
 		for raw := range data {
 			sp := raw.(ShortPackageDefinition)
 
@@ -198,7 +197,7 @@ func (ns *NpmService) SyncPackages() error {
 		if store {
 			logger.WithFields(log.Fields{
 				"package": name,
-			}).Info("Add/Update package to process")
+			}).Debug("Add/Update package to process")
 
 			dm.Add(*sp)
 		} else {
