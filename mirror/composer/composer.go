@@ -98,13 +98,17 @@ func (ps *ComposerService) SyncPackages() error {
 			p := &PackageResult{}
 
 			logger.WithFields(log.Fields{
-				"package": pkg.Package,
-				"worker":  id,
+				"package":     pkg.Package,
+				"source_hash": pkg.HashSource,
+				"worker":      id,
 			}).Debug("Load loading package information")
 
-			if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), p); err != nil {
+			url := fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey())
+
+			if err := pkgmirror.LoadRemoteStruct(url, p); err != nil {
 				logger.WithFields(log.Fields{
 					"package": pkg.Package,
+					"url":     url,
 					"error":   err.Error(),
 				}).Error("Error loading package information")
 
