@@ -22,6 +22,7 @@ func Test_Load_Package(t *testing.T) {
 		{"math_example_bulbignz", "math_example_bulbignz.json"},
 		{"gulp-app-manager", "gulp-app-manager.json"},
 		{"jsontocsv", "jsontocsv.json"},
+		{"qs", "qs.json"},
 	}
 
 	for _, f := range files {
