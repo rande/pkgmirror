@@ -16,6 +16,9 @@ test:      ## Run backend tests
 	go test ./...
 	go vet ./...
 
+run:      ## Run server
+	go run cli/main.go run -file ./pkgmirror.toml -log-level=info
+
 install:  ## Install backend dependencies
 	go get github.com/boltdb/bolt/...
 	(go get github.com/rande/gonode/... || exit 0)
