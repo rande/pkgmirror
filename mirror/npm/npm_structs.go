@@ -36,12 +36,12 @@ type ShortPackageDefinition struct {
 }
 
 type PackageVersionDefinition struct {
-	Name                 string           `json:"name,omitempty"`
-	Description          string           `json:"description,omitempty"`
-	Version              string           `json:"version,omitempty"`
-	Homepage             *json.RawMessage `json:"homepage,omitempty"`
-	Repository           *json.RawMessage `json:"repository,omitempty"`
-	Contributors         *json.RawMessage `json:"contributors,omitempty"`
+	Name        string           `json:"name,omitempty"`
+	Description string           `json:"description,omitempty"`
+	Version     string           `json:"version,omitempty"`
+	Homepage    *json.RawMessage `json:"homepage,omitempty"`
+	Repository  *json.RawMessage `json:"repository,omitempty"`
+	//Contributors         *json.RawMessage `json:"contributors,omitempty"`
 	Main                 *json.RawMessage `json:"main,omitempty"`
 	Licences             *json.RawMessage `json:"licenses,omitempty"`
 	Author               *json.RawMessage `json:"author,omitempty"`
@@ -59,45 +59,45 @@ type PackageVersionDefinition struct {
 	Gypfile              *json.RawMessage `json:"gypfile,omitempty"`
 	License              *json.RawMessage `json:"license,omitempty"`
 	GitHead              *json.RawMessage `json:"gitHead,omitempty"`
-	Bugs                 *json.RawMessage `json:"bugs,omitempty"`
-	Binary               *json.RawMessage `json:"binary,omitempty"`
-	Os                   *json.RawMessage `json:"os,omitempty"`
-	Cpu                  *json.RawMessage `json:"cpu,omitempty"`
-	PreferGlobal         *json.RawMessage `json:"preferGlobal,omitempty"`
-	PublishConfig        *json.RawMessage `json:"publishConfig,omitempty"`
-	BundleDependencies   *json.RawMessage `json:"bundleDependencies,omitempty"`
-	Keywords             *json.RawMessage `json:"keywords,omitempty"`
-	ID                   *json.RawMessage `json:"_id,omitempty"`
-	Shasum               *json.RawMessage `json:"_shasum,omitempty"`
-	From                 *json.RawMessage `json:"_from,omitempty"`
-	NpmVersion           *json.RawMessage `json:"_npmVersion,omitempty"`
-	NodeVersion          *json.RawMessage `json:"_nodeVersion,omitempty"`
-	NpmUser              *json.RawMessage `json:"_npmUser,omitempty"`
-	Maintainers          *json.RawMessage `json:"maintainers,omitempty"`
-	Dist                 struct {
+	//Bugs                 *json.RawMessage `json:"bugs,omitempty"`
+	Binary             *json.RawMessage `json:"binary,omitempty"`
+	Os                 *json.RawMessage `json:"os,omitempty"`
+	Cpu                *json.RawMessage `json:"cpu,omitempty"`
+	PreferGlobal       *json.RawMessage `json:"preferGlobal,omitempty"`
+	PublishConfig      *json.RawMessage `json:"publishConfig,omitempty"`
+	BundleDependencies *json.RawMessage `json:"bundleDependencies,omitempty"`
+	Keywords           *json.RawMessage `json:"keywords,omitempty"`
+	//ID                   *json.RawMessage `json:"_id,omitempty"`
+	//Shasum               *json.RawMessage `json:"_shasum,omitempty"`
+	//From                 *json.RawMessage `json:"_from,omitempty"`
+	//NpmVersion           *json.RawMessage `json:"_npmVersion,omitempty"`
+	//NodeVersion          *json.RawMessage `json:"_nodeVersion,omitempty"`
+	//NpmUser              *json.RawMessage `json:"_npmUser,omitempty"`
+	//Maintainers          *json.RawMessage `json:"maintainers,omitempty"`
+	Dist struct {
 		Shasum  string `json:"shasum,omitempty"`
 		Tarball string `json:"tarball,omitempty"`
 	} `json:"dist,omitempty"`
-	NpmOperationalInternal *json.RawMessage `json:"_npmOperationalInternal,omitempty"`
-	Directories            *json.RawMessage `json:"directories,omitempty"`
+	//NpmOperationalInternal *json.RawMessage `json:"_npmOperationalInternal,omitempty"`
+	Directories *json.RawMessage `json:"directories,omitempty"`
 }
 
 type FullPackageDefinition struct {
-	ID             string                               `json:"_id,omitempty"`
-	Rev            string                               `json:"_rev,omitempty"`
-	Name           string                               `json:"name,omitempty"`
-	Description    *json.RawMessage                     `json:"description,omitempty"`
-	DistTags       *json.RawMessage                     `json:"dist-tags"`
-	Versions       map[string]*PackageVersionDefinition `json:"versions,omitempty"`
-	Readme         *json.RawMessage                     `json:"readme,omitempty"`
-	Maintainers    *json.RawMessage                     `json:"maintainers,omitempty"`
-	Time           *json.RawMessage                     `json:"time,omitempty"`
-	Author         *json.RawMessage                     `json:"author,omitempty"`
-	Repository     *json.RawMessage                     `json:"repository,omitempty"`
-	Users          *json.RawMessage                     `json:"users,omitempty"`
-	ReadmeFilename *json.RawMessage                     `json:"readmeFilename,omitempty"`
-	Homepage       *json.RawMessage                     `json:"homepage,omitempty"`
-	Bugs           *json.RawMessage                     `json:"bugs,omitempty"`
-	License        *json.RawMessage                     `json:"license,omitempty"`
-	Attachments    *json.RawMessage                     `json:"_attachments,omitempty"`
+	ID          string                               `json:"_id,omitempty"`
+	Rev         string                               `json:"_rev,omitempty"`
+	Name        string                               `json:"name,omitempty"`
+	Description *json.RawMessage                     `json:"description,omitempty"`
+	DistTags    *json.RawMessage                     `json:"dist-tags"`
+	Versions    map[string]*PackageVersionDefinition `json:"versions,omitempty"`
+	//Readme         *json.RawMessage                     `json:"readme,omitempty"`
+	//Maintainers    *json.RawMessage                     `json:"maintainers,omitempty"`
+	Time       *json.RawMessage `json:"time,omitempty"`
+	Author     *json.RawMessage `json:"author,omitempty"`
+	Repository *json.RawMessage `json:"repository,omitempty"`
+	//Users          *json.RawMessage                     `json:"users,omitempty"`
+	//ReadmeFilename *json.RawMessage                     `json:"readmeFilename,omitempty"`
+	//Homepage       *json.RawMessage                     `json:"homepage,omitempty"`
+	//Bugs           *json.RawMessage                     `json:"bugs,omitempty"`
+	License     *json.RawMessage `json:"license,omitempty"`
+	Attachments *json.RawMessage `json:"_attachments,omitempty"`
 }
