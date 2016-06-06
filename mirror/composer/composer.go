@@ -352,10 +352,10 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 	}
 
 	//pr.ProviderIncludes = providerIncludes
-	pkgResult.ProvidersURL = fmt.Sprintf("/%s%s", ps.Config.Code, pkgResult.ProvidersURL)
-	pkgResult.Notify = fmt.Sprintf("/%s%s", ps.Config.Code, pkgResult.Notify)
-	pkgResult.NotifyBatch = fmt.Sprintf("/%s%s", ps.Config.Code, pkgResult.NotifyBatch)
-	pkgResult.Search = fmt.Sprintf("/%s%s", ps.Config.Code, pkgResult.Search)
+	pkgResult.ProvidersURL = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.ProvidersURL)
+	pkgResult.Notify = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.Notify)
+	pkgResult.NotifyBatch = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.NotifyBatch)
+	pkgResult.Search = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.Search)
 
 	ps.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
