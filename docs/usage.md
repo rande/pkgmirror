@@ -25,6 +25,19 @@ Next, you need to declare the mirror in your ``composer.json`` file:
 
 The ``packagist`` key is used here as an example.
 
+Npm
+---
+
+To add new repository, for instance, https://registry.npmjs.org
+
+        [Npm]
+            [Npm.npm]
+            Server = "https://registry.npmjs.org"
+            
+Next, you need to declare the registry in npm
+
+        npm registry set https://localhost/npm/npm
+
 Git
 ---
 

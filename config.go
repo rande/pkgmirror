@@ -11,6 +11,7 @@ type ComposerConfig struct {
 
 type NpmConfig struct {
 	Server    string
+	Enabled   bool
 	Fallbacks []*struct {
 		Server string
 	}

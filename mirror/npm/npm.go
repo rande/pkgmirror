@@ -236,7 +236,7 @@ func (ns *NpmService) savePackage(pkg *ShortPackageDefinition) error {
 
 		for _, version := range pkg.FullPackageDefinition.Versions {
 			if results := NPM_ARCHIVE.FindStringSubmatch(version.Dist.Tarball); len(results) > 0 {
-				version.Dist.Tarball = fmt.Sprintf("%s/npm/%s", ns.Config.PublicServer, results[3])
+				version.Dist.Tarball = fmt.Sprintf("%s/npm/%s/%s", ns.Config.PublicServer, string(ns.Config.Code), results[3])
 			} else {
 				logger.WithFields(log.Fields{
 					"error":   "regexp does not match",

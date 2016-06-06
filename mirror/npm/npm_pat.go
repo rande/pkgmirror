@@ -6,6 +6,7 @@
 package npm
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 
@@ -14,19 +15,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
-	PAT_ARCHIVE_URL = regexp.MustCompile(`\/npm\/([\w\d\.-]+)\/-\/([\w\d\.-]+)-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:(?:\d*[A-Za-z-][0-9A-Za-z-]*|(?:0|[1-9]\d*))\.)*(?:\d*[A-Za-z-][0-9A-Za-z-]*|(?:0|[1-9]\d*))))?(?:\+((?:(?:[0-9A-Za-z-]+)\.)*[0-9A-Za-z-]+))?)\.(tgz)`)
-)
-
-func NewArchivePat() goji.Pattern {
-	return &PackagePat{}
+func NewArchivePat(code string) goji.Pattern {
+	return &PackagePat{
+		Pattern: regexp.MustCompile(fmt.Sprintf(`\/npm\/%s\/([\w\d\.-]+)\/-\/([\w\d\.-]+)-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:(?:\d*[A-Za-z-][0-9A-Za-z-]*|(?:0|[1-9]\d*))\.)*(?:\d*[A-Za-z-][0-9A-Za-z-]*|(?:0|[1-9]\d*))))?(?:\+((?:(?:[0-9A-Za-z-]+)\.)*[0-9A-Za-z-]+))?)\.(tgz)`, code)),
+	}
 }
 
 type PackagePat struct {
+	Pattern *regexp.Regexp
 }
 
 func (pp *PackagePat) Match(ctx context.Context, r *http.Request) context.Context {
-	if results := PAT_ARCHIVE_URL.FindStringSubmatch(r.URL.Path); len(results) == 0 {
+	if results := pp.Pattern.FindStringSubmatch(r.URL.Path); len(results) == 0 {
 		return nil
 	} else {
 		return &packagePatMatch{ctx, results[1], results[3], "tgz"}

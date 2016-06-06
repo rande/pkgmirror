@@ -26,9 +26,9 @@ func mustReq(method, path string) (context.Context, *http.Request) {
 }
 
 func Test_Npm_Pat_Archive(t *testing.T) {
-	p := &PackagePat{}
+	p := NewArchivePat("npm")
 
-	c, r := mustReq("GET", "/npm/aspace/-/aspace-0.0.1.tgz")
+	c, r := mustReq("GET", "/npm/npm/aspace/-/aspace-0.0.1.tgz")
 
 	result := p.Match(c, r)
 

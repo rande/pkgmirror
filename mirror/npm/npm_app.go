@@ -21,26 +21,36 @@ import (
 func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 
 	l.Register(func(app *goapp.App) error {
-		app.Set("mirror.npm", func(app *goapp.App) interface{} {
-			logger := app.Get("logger").(*log.Logger)
+		logger := app.Get("logger").(*log.Logger)
 
-			s := NewNpmService()
-			s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
-			s.Config.PublicServer = config.PublicServer
-			s.Logger = logger.WithFields(log.Fields{
-				"handler": "npm",
-				"server":  s.Config.SourceServer,
-			})
-			s.Vault = &vault.Vault{
-				Algo: "no_op",
-				Driver: &vault.DriverFs{
-					Root: fmt.Sprintf("%s/npm/packages", config.DataDir),
-				},
+		for name, conf := range config.Npm {
+
+			if !conf.Enabled {
+				continue
 			}
-			s.Init(app)
 
-			return s
-		})
+			app.Set(fmt.Sprintf("mirror.npm.%s", name), func(app *goapp.App) interface{} {
+				s := NewNpmService()
+				s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
+				s.Config.PublicServer = config.PublicServer
+				s.Config.SourceServer = conf.Server
+				s.Config.Code = []byte(name)
+				s.Logger = logger.WithFields(log.Fields{
+					"handler": "npm",
+					"server":  s.Config.SourceServer,
+					"code":    name,
+				})
+				s.Vault = &vault.Vault{
+					Algo: "no_op",
+					Driver: &vault.DriverFs{
+						Root: fmt.Sprintf("%s/npm/%s_packages", config.DataDir, name),
+					},
+				}
+				s.Init(app)
+
+				return s
+			})
+		}
 
 		return nil
 	})
@@ -48,46 +58,52 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 	l.Prepare(func(app *goapp.App) error {
 		//c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
 
-		logger := app.Get("logger").(*log.Logger)
-		mux := app.Get("mux").(*goji.Mux)
-		npmService := app.Get("mirror.npm").(*NpmService)
-
-		mux.HandleFuncC(NewArchivePat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			pkg := pat.Param(ctx, "package")
-			version := pat.Param(ctx, "version")
-
-			logger.WithFields(log.Fields{
-				"package": pkg,
-				"version": version,
-			}).Info("Zip archive")
-
-			w.Header().Set("Content-Type", "Content-Type: application/octet-stream")
-			if err := npmService.WriteArchive(w, pkg, version); err != nil {
-				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+		for name, conf := range config.Npm {
+			if !conf.Enabled {
+				continue
 			}
-		})
 
-		mux.HandleFuncC(pat.Get("/npm/*"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			pkg := r.URL.Path[5:]
-
-			if data, err := npmService.Get(pkg); err != nil {
-				pkgmirror.SendWithHttpCode(w, 404, err.Error())
-			} else {
-				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Content-Encoding", "gzip")
-				w.Write(data)
-			}
-		})
+			ConfigureHttp(name, conf, app)
+		}
 
 		return nil
 	})
 
-	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-		//c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
+	for name, conf := range config.Npm {
+		if !conf.Enabled {
+			continue
+		}
 
-		s := app.Get("mirror.npm").(pkgmirror.MirrorService)
-		s.Serve(state)
+		l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
+			//c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
+			s := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
+			s.Serve(state)
 
-		return nil
+			return nil
+		})
+	}
+}
+
+func ConfigureHttp(name string, conf *pkgmirror.NpmConfig, app *goapp.App) {
+	mux := app.Get("mux").(*goji.Mux)
+	npmService := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
+
+	mux.HandleFuncC(NewArchivePat(name), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "Content-Type: application/octet-stream")
+		if err := npmService.WriteArchive(w, pat.Param(ctx, "package"), pat.Param(ctx, "version")); err != nil {
+			pkgmirror.SendWithHttpCode(w, 500, err.Error())
+		}
+	})
+
+	mux.HandleFuncC(pat.Get(fmt.Sprintf("/npm/%s/*", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		pkg := r.URL.Path[6+len(name):]
+
+		if data, err := npmService.Get(pkg); err != nil {
+			pkgmirror.SendWithHttpCode(w, 404, err.Error())
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Write(data)
+		}
 	})
 }
