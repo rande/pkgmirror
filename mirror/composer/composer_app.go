@@ -25,6 +25,11 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		logger := app.Get("logger").(*log.Logger)
 
 		for name, conf := range config.Composer {
+
+			if !conf.Enabled {
+				continue
+			}
+
 			app.Set(fmt.Sprintf("mirror.composer.%s", name), func(app *goapp.App) interface{} {
 				s := NewComposerService()
 				s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
@@ -52,13 +57,22 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		})
 
 		for name, conf := range config.Composer {
+
+			if !conf.Enabled {
+				continue
+			}
+
 			ConfigureHttp(name, conf, app)
 		}
 
 		return nil
 	})
 
-	for name := range config.Composer {
+	for name, conf := range config.Composer {
+		if !conf.Enabled {
+			continue
+		}
+
 		l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 			//c.Ui.Info(fmt.Sprintf("Start Composer Sync (ref: %s/packagist)", config.PublicServer))
 			s := app.Get(fmt.Sprintf("mirror.composer.%s", name)).(pkgmirror.MirrorService)

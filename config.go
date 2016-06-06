@@ -6,7 +6,8 @@
 package pkgmirror
 
 type ComposerConfig struct {
-	Server string
+	Server  string
+	Enabled bool
 }
 
 type NpmConfig struct {

@@ -9,6 +9,7 @@ To add a new repository, for instance, the official one:
         [Composer]
             [Composer.packagist]
             Server = "https://packagist.org"
+            Enabled = true
 
 Next, you need to declare the mirror in your ``composer.json`` file:
 
