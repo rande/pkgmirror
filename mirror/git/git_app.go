@@ -44,16 +44,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		return nil
 	})
 
-	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-		//c.Ui.Info(fmt.Sprintf("Start Git Sync (server: %s/git)", config.PublicServer))
-
-		s := app.Get("mirror.git").(pkgmirror.MirrorService)
-		s.Serve(state)
-
-		return nil
-	})
-
-	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
+	l.Prepare(func(app *goapp.App) error {
 		//c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
 
 		logger := app.Get("logger").(*log.Logger)
@@ -84,6 +75,15 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		})
+
+		return nil
+	})
+
+	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
+		//c.Ui.Info(fmt.Sprintf("Start Git Sync (server: %s/git)", config.PublicServer))
+
+		s := app.Get("mirror.git").(pkgmirror.MirrorService)
+		s.Serve(state)
 
 		return nil
 	})
