@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	log "github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
@@ -23,7 +22,6 @@ import (
 	"github.com/rande/pkgmirror/mirror/npm"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 )
 
 type ServerCommand struct {
@@ -35,7 +33,6 @@ type ServerCommand struct {
 }
 
 func (c *ServerCommand) Run(args []string) int {
-
 	cmdFlags := flag.NewFlagSet("run", flag.ContinueOnError)
 	cmdFlags.Usage = func() {
 		c.Ui.Output(c.Help())
@@ -51,6 +48,7 @@ func (c *ServerCommand) Run(args []string) int {
 
 	config := &pkgmirror.Config{
 		CacheDir: fmt.Sprintf("%s/pkgmirror", os.TempDir()),
+		LogLevel: "info",
 	}
 
 	if _, err := toml.DecodeFile(c.ConfFile, config); err != nil {
@@ -59,57 +57,17 @@ func (c *ServerCommand) Run(args []string) int {
 		return 1
 	}
 
-	logger := log.New()
+	c.Ui.Info("Configure app")
 
-	if c.Verbose {
-		logger.Level = log.DebugLevel
-	}
+	l := goapp.NewLifecycle()
 
-	if !c.Verbose {
-		if level, err := log.ParseLevel(c.LogLevel); err != nil {
-			c.Ui.Error(fmt.Sprintf("Unable to parse the log level: %s", c.LogLevel))
+	app, err := pkgmirror.GetApp(config)
 
-			return 1
-		} else {
-			logger.Level = level
-		}
-	}
-
-	if len(config.DataDir) == 0 {
-		c.Ui.Error("Please configure DataDir")
+	if err != nil {
+		c.Ui.Error(err.Error())
 
 		return 1
 	}
-
-	c.Ui.Info("Configure app")
-
-	app := goapp.NewApp()
-	app.Set("logger", func(app *goapp.App) interface{} {
-		return logger
-	})
-
-	app.Set("mux", func(app *goapp.App) interface{} {
-		m := goji.NewMux()
-
-		m.UseC(func(h goji.Handler) goji.Handler {
-			return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				logger.WithFields(log.Fields{
-					"request_method":      r.Method,
-					"request_url":         r.URL.String(),
-					"request_remote_addr": r.RemoteAddr,
-					"request_host":        r.Host,
-				}).Info("Receive HTTP request")
-
-				//t1 := time.Now()
-				h.ServeHTTPC(ctx, w, r)
-				//t2 := time.Now()
-			})
-		})
-
-		return m
-	})
-
-	l := goapp.NewLifecycle()
 
 	composer.ConfigureApp(config, l)
 	git.ConfigureApp(config, l)
