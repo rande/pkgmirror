@@ -5,10 +5,30 @@
 
 package pkgmirror
 
+type ComposerConfig struct {
+	Server string
+}
+
+type NpmConfig struct {
+	Server    string
+	Fallbacks []*struct {
+		Server string
+	}
+}
+
+type GitConfig struct {
+	Server string
+	Clone  string
+}
+
 type Config struct {
 	DataDir        string
 	LogDir         string
 	CacheDir       string
 	PublicServer   string
 	InternalServer string
+	LogLevel       string
+	Composer       map[string]*ComposerConfig
+	Npm            map[string]*NpmConfig
+	Git            map[string]*GitConfig
 }
