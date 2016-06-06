@@ -107,7 +107,7 @@ func (ns *NpmService) SyncPackages() error {
 		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
 	}).Info("Load all packages")
 
-	f, _ := os.Create(fmt.Sprintf("%s/all_%s.json", ns.Config.Path, string(ns.Config.Code)))
+	f, _ := os.Create(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)))
 	defer f.Close()
 
 	if resp, err := http.Get(fmt.Sprintf("%s/-/all", ns.Config.SourceServer)); err != nil {
@@ -120,7 +120,7 @@ func (ns *NpmService) SyncPackages() error {
 		resp.Body.Close()
 	}
 
-	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/all_%s.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {
+	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {
 		logger.WithError(err).Error("Unable to load all npm packages")
 	}
 
