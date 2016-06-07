@@ -59,8 +59,8 @@ type Package struct {
 		Reference string `json:"reference"`
 		Shasum    string `json:"shasum"`
 	} `json:"dist"`
-	Extra         []struct {
-		Branch-Alias map[string]string `json:"branch-alias"`
+	Extra []struct {
+		BranchAlias map[string]string `json:"branch-alias"`
 	} `json:"extra"`
 	TargetDir     string            `json:"target-dir"`
 	Type          string            `json:"type"`
