@@ -34,6 +34,7 @@ type ProvidersResult struct {
 // package description
 type Package struct {
 	Name              string   `json:"name"`
+	Abandoned         string   `json:"abandoned"`
 	Description       string   `json:"description"`
 	Keywords          []string `json:"keywords"`
 	Homepage          string   `json:"homepage"`
@@ -42,8 +43,10 @@ type Package struct {
 	License           []string `json:"license"`
 	Bin               []string `json:"bin"`
 	Authors           []struct {
-		Name  string `json:"name"`
-		Email string `json:"email"`
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Homepage string `json:"homepage"`
+		Role     string `json:"role"`
 	} `json:"authors"`
 	Source struct {
 		Type      string `json:"type"`
@@ -56,9 +59,15 @@ type Package struct {
 		Reference string `json:"reference"`
 		Shasum    string `json:"shasum"`
 	} `json:"dist"`
+	Extra         []struct {
+		Branch-Alias map[string]string `json:"branch-alias"`
+	} `json:"extra"`
+	TargetDir     string            `json:"target-dir"`
 	Type          string            `json:"type"`
 	Time          time.Time         `json:"time"`
 	Autoload      *json.RawMessage  `json:"autoload"`
+	Conflict      map[string]string `json:"conflict"`
+	Provide       map[string]string `json:"provide"`
 	Require       map[string]string `json:"require"`
 	RequireDevmap map[string]string `json:"require-dev"`
 	Suggest       map[string]string `json:"suggest"`
