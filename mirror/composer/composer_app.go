@@ -12,7 +12,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
-	"github.com/rande/pkgmirror/mirror/git"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
@@ -25,25 +24,27 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		logger := app.Get("logger").(*log.Logger)
 
 		for name, conf := range config.Composer {
-
 			if !conf.Enabled {
 				continue
 			}
 
-			app.Set(fmt.Sprintf("mirror.composer.%s", name), func(app *goapp.App) interface{} {
-				s := NewComposerService()
-				s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
-				s.GitConfig = app.Get("mirror.git").(*git.GitService).Config
-				s.Config.SourceServer = conf.Server
-				s.Logger = logger.WithFields(log.Fields{
-					"handler": "composer",
-					"server":  s.Config.SourceServer,
-					"code":    name,
-				})
-				s.Init(app)
+			app.Set(fmt.Sprintf("mirror.composer.%s", name), func(name string, conf *pkgmirror.ComposerConfig) func(app *goapp.App) interface{} {
 
-				return s
-			})
+				return func(app *goapp.App) interface{} {
+					s := NewComposerService()
+					s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
+					s.Config.PublicServer = config.PublicServer
+					s.Config.SourceServer = conf.Server
+					s.Logger = logger.WithFields(log.Fields{
+						"handler": "composer",
+						"server":  s.Config.SourceServer,
+						"code":    name,
+					})
+					s.Init(app)
+
+					return s
+				}
+			}(name, conf))
 		}
 
 		return nil
@@ -57,7 +58,6 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		})
 
 		for name, conf := range config.Composer {
-
 			if !conf.Enabled {
 				continue
 			}
@@ -73,13 +73,15 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 			continue
 		}
 
-		l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-			//c.Ui.Info(fmt.Sprintf("Start Composer Sync (ref: %s/packagist)", config.PublicServer))
-			s := app.Get(fmt.Sprintf("mirror.composer.%s", name)).(pkgmirror.MirrorService)
-			s.Serve(state)
+		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
 
-			return nil
-		})
+			return func(app *goapp.App, state *goapp.GoroutineState) error {
+				s := app.Get(fmt.Sprintf("mirror.composer.%s", name)).(pkgmirror.MirrorService)
+				s.Serve(state)
+
+				return nil
+			}
+		}(name))
 	}
 }
 

@@ -17,9 +17,7 @@ type Expectation struct {
 }
 
 func Test_Archive_Rewrite_Github(t *testing.T) {
-	conf := &GitConfig{
-		PublicServer: "https://mirrors.localhost",
-	}
+	publicServer := "https://mirrors.localhost"
 
 	values := []*Expectation{
 		{"https://mirrors.localhost/git/github.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", "https://api.github.com/repos/sonata-project/exporter/zipball/b9098b5007c525a238ddf44d578b8efae7bccc72"},
@@ -27,33 +25,27 @@ func Test_Archive_Rewrite_Github(t *testing.T) {
 	}
 
 	for _, v := range values {
-		assert.Equal(t, v.Expected, GitRewriteArchive(conf, v.Value))
+		assert.Equal(t, v.Expected, GitRewriteArchive(publicServer, v.Value))
 	}
 
 }
 
 func Test_Archive_Rewrite_Bitbucket(t *testing.T) {
-	conf := &GitConfig{
-		PublicServer: "https://mirrors.localhost",
-	}
+	publicServer := "https://mirrors.localhost"
 
-	path := GitRewriteArchive(conf, "https://bitbucket.org/sonata-project/exporter/get/b9098b5007c525a238ddf44d578b8efae7bccc72.zip")
+	path := GitRewriteArchive(publicServer, "https://bitbucket.org/sonata-project/exporter/get/b9098b5007c525a238ddf44d578b8efae7bccc72.zip")
 	assert.Equal(t, "https://mirrors.localhost/git/bitbucket.org/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", path)
 }
 
 func Test_Archive_Rewrite_Gitlab(t *testing.T) {
-	conf := &GitConfig{
-		PublicServer: "https://mirrors.localhost",
-	}
+	publicServer := "https://mirrors.localhost"
 
-	path := GitRewriteArchive(conf, "https://gitlab.example.com/sonata-project/exporter/repository/archive.zip?ref=b9098b5007c525a238ddf44d578b8efae7bccc72")
+	path := GitRewriteArchive(publicServer, "https://gitlab.example.com/sonata-project/exporter/repository/archive.zip?ref=b9098b5007c525a238ddf44d578b8efae7bccc72")
 	assert.Equal(t, "https://mirrors.localhost/git/gitlab.example.com/sonata-project/exporter/b9098b5007c525a238ddf44d578b8efae7bccc72.zip", path)
 }
 
 func Test_Repository_Rewrite_Git(t *testing.T) {
-	conf := &GitConfig{
-		PublicServer: "https://mirrors.localhost",
-	}
+	publicServer := "https://mirrors.localhost"
 
 	values := []*Expectation{
 		{"https://mirrors.localhost/git/github.com/DavidForest/ImgBundle.git", "git@github.com:DavidForest/ImgBundle.git"},
@@ -64,14 +56,12 @@ func Test_Repository_Rewrite_Git(t *testing.T) {
 	}
 
 	for _, v := range values {
-		assert.Equal(t, v.Expected, GitRewriteRepository(conf, v.Value))
+		assert.Equal(t, v.Expected, GitRewriteRepository(publicServer, v.Value))
 	}
 }
 
 func Test_Repository_Rewrite_SVN(t *testing.T) {
-	conf := &GitConfig{
-		PublicServer: "https://mirrors.localhost",
-	}
+	publicServer := "https://mirrors.localhost"
 
 	values := []*Expectation{
 		{"https://m10s.svn.beanstalkapp.com/m10s-common", "https://m10s.svn.beanstalkapp.com/m10s-common"},
@@ -79,6 +69,6 @@ func Test_Repository_Rewrite_SVN(t *testing.T) {
 	}
 
 	for _, v := range values {
-		assert.Equal(t, v.Expected, GitRewriteRepository(conf, v.Value))
+		assert.Equal(t, v.Expected, GitRewriteRepository(publicServer, v.Value))
 	}
 }

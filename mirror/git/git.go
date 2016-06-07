@@ -274,31 +274,31 @@ func (gs *GitService) WriteFile(w io.Writer, path string) error {
 	return nil
 }
 
-func GitRewriteArchive(config *GitConfig, path string) string {
+func GitRewriteArchive(publicServer, path string) string {
 	if results := GITHUB_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", publicServer, results[2], results[3], results[4], results[5])
 	}
 
 	if results := BITBUCKET_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", publicServer, results[2], results[3], results[4], results[5])
 	}
 
 	if results := GITLAB_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", publicServer, results[2], results[3], results[4], results[5])
 	}
 
-	return config.PublicServer
+	return publicServer
 }
 
-func GitRewriteRepository(config *GitConfig, path string) string {
+func GitRewriteRepository(publicServer, path string) string {
 
 	if results := SVN_REPOSITORY.FindStringSubmatch(path); len(results) > 1 {
 		return path // svn not supported
 	}
 
 	if results := GIT_REPOSITORY.FindStringSubmatch(path); len(results) > 1 {
-		return fmt.Sprintf("%s/git/%s/%s.git", config.PublicServer, results[6], results[8])
+		return fmt.Sprintf("%s/git/%s/%s.git", publicServer, results[6], results[8])
 	}
 
-	return config.PublicServer
+	return publicServer
 }

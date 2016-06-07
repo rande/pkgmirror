@@ -22,6 +22,7 @@ import (
 
 type ComposerConfig struct {
 	SourceServer string
+	PublicServer string
 	Code         []byte
 	Path         string
 }
@@ -37,11 +38,10 @@ func NewComposerService() *ComposerService {
 }
 
 type ComposerService struct {
-	DB        *bolt.DB
-	Config    *ComposerConfig
-	Logger    *log.Entry
-	GitConfig *git.GitConfig
-	lock      bool
+	DB     *bolt.DB
+	Config *ComposerConfig
+	Logger *log.Entry
+	lock   bool
 }
 
 func (ps *ComposerService) Init(app *goapp.App) error {
@@ -433,8 +433,8 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 		})
 
 		for _, version := range pkg.PackageResult.Packages[pkg.Package] {
-			version.Dist.URL = git.GitRewriteArchive(ps.GitConfig, version.Dist.URL)
-			version.Source.URL = git.GitRewriteRepository(ps.GitConfig, version.Source.URL)
+			version.Dist.URL = git.GitRewriteArchive(ps.Config.PublicServer, version.Dist.URL)
+			version.Source.URL = git.GitRewriteRepository(ps.Config.PublicServer, version.Source.URL)
 		}
 
 		// compute hash

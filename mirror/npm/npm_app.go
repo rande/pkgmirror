@@ -29,27 +29,29 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				continue
 			}
 
-			app.Set(fmt.Sprintf("mirror.npm.%s", name), func(app *goapp.App) interface{} {
-				s := NewNpmService()
-				s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
-				s.Config.PublicServer = config.PublicServer
-				s.Config.SourceServer = conf.Server
-				s.Config.Code = []byte(name)
-				s.Logger = logger.WithFields(log.Fields{
-					"handler": "npm",
-					"server":  s.Config.SourceServer,
-					"code":    name,
-				})
-				s.Vault = &vault.Vault{
-					Algo: "no_op",
-					Driver: &vault.DriverFs{
-						Root: fmt.Sprintf("%s/npm/%s_packages", config.DataDir, name),
-					},
-				}
-				s.Init(app)
+			app.Set(fmt.Sprintf("mirror.npm.%s", name), func(name string, conf *pkgmirror.NpmConfig) func(app *goapp.App) interface{} {
+				return func(app *goapp.App) interface{} {
+					s := NewNpmService()
+					s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
+					s.Config.PublicServer = config.PublicServer
+					s.Config.SourceServer = conf.Server
+					s.Config.Code = []byte(name)
+					s.Logger = logger.WithFields(log.Fields{
+						"handler": "npm",
+						"server":  s.Config.SourceServer,
+						"code":    name,
+					})
+					s.Vault = &vault.Vault{
+						Algo: "no_op",
+						Driver: &vault.DriverFs{
+							Root: fmt.Sprintf("%s/npm/%s_packages", config.DataDir, name),
+						},
+					}
+					s.Init(app)
 
-				return s
-			})
+					return s
+				}
+			}(name, conf))
 		}
 
 		return nil
@@ -74,13 +76,15 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 			continue
 		}
 
-		l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-			//c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
-			s := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
-			s.Serve(state)
+		l.Run(func(name string, conf *pkgmirror.NpmConfig) func(app *goapp.App, state *goapp.GoroutineState) error {
+			return func(app *goapp.App, state *goapp.GoroutineState) error {
+				//c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
+				s := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
+				s.Serve(state)
 
-			return nil
-		})
+				return nil
+			}
+		}(name, conf))
 	}
 }
 
