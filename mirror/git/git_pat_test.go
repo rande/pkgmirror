@@ -6,9 +6,8 @@
 package git
 
 import (
-	"testing"
-
 	"net/http"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"goji.io/pattern"
@@ -26,14 +25,15 @@ func mustReq(method, path string) (context.Context, *http.Request) {
 }
 
 func Test_Composer_Pat_Archive(t *testing.T) {
-	p := &GitPat{}
+	p := NewGitPat("github.com")
 
 	c, r := mustReq("GET", "/git/github.com/kevinlebrun/colors.php/cb9b6666a2dfd9b6074b4a5caec7902fe3033578.zip")
 
 	result := p.Match(c, r)
 
 	assert.NotNil(t, result)
-	assert.Equal(t, "github.com/kevinlebrun/colors.php", result.Value(pattern.Variable("path")))
+	assert.Equal(t, "github.com", result.Value(pattern.Variable("hostname")))
+	assert.Equal(t, "kevinlebrun/colors.php", result.Value(pattern.Variable("path")))
 	assert.Equal(t, "cb9b6666a2dfd9b6074b4a5caec7902fe3033578", result.Value(pattern.Variable("ref")))
 	assert.Equal(t, "zip", result.Value(pattern.Variable("format")))
 }

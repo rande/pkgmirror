@@ -21,70 +21,86 @@ import (
 func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 
 	l.Register(func(app *goapp.App) error {
-		app.Set("mirror.git", func(app *goapp.App) interface{} {
-			logger := app.Get("logger").(*log.Logger)
+		logger := app.Get("logger").(*log.Logger)
 
-			s := NewGitService()
-			s.Config.Server = config.PublicServer
-			s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
-			s.Vault = &vault.Vault{
-				Algo: "no_op",
-				Driver: &vault.DriverFs{
-					Root: fmt.Sprintf("%s/git", config.CacheDir),
-				},
+		vault := &vault.Vault{
+			Algo: "no_op",
+			Driver: &vault.DriverFs{
+				Root: fmt.Sprintf("%s/git", config.CacheDir),
+			},
+		}
+
+		for name, conf := range config.Git {
+			if !conf.Enabled {
+				continue
 			}
-			s.Logger = logger.WithFields(log.Fields{
-				"handler": "git",
-			})
-			s.Init(app)
 
-			return s
-		})
+			app.Set(fmt.Sprintf("mirror.git.%s", name), func(name string, conf *pkgmirror.GitConfig) func(app *goapp.App) interface{} {
+
+				return func(app *goapp.App) interface{} {
+					s := NewGitService()
+					s.Config.Server = conf.Server
+					s.Config.PublicServer = config.PublicServer
+					s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
+					s.Vault = vault
+					s.Logger = logger.WithFields(log.Fields{
+						"handler": "git",
+						"code":    name,
+					})
+					s.Init(app)
+
+					return s
+				}
+			}(name, conf))
+		}
 
 		return nil
 	})
 
 	l.Prepare(func(app *goapp.App) error {
-		//c.Ui.Info(fmt.Sprintf("Start HTTP Server (bind: %s)", config.InternalServer))
-
-		logger := app.Get("logger").(*log.Logger)
-		mux := app.Get("mux").(*goji.Mux)
-		gitService := app.Get("mirror.git").(*GitService)
-
-		mux.HandleFuncC(NewGitPat(), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			path := pat.Param(ctx, "path")
-			ref := pat.Param(ctx, "ref")
-
-			logger.WithFields(log.Fields{
-				"path": path,
-				"ref":  ref,
-			}).Info("Zip archive")
-
-			w.Header().Set("Content-Type", "application/zip")
-			if err := gitService.WriteArchive(w, fmt.Sprintf("%s.git", path), ref); err != nil {
-				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+		for name, conf := range config.Git {
+			if !conf.Enabled {
+				continue
 			}
-		})
 
-		mux.HandleFuncC(pat.Get("/git/*"), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			logger.WithFields(log.Fields{
-				"path": r.URL.Path[5:],
-			}).Info("Git fetch")
-
-			if err := gitService.WriteFile(w, r.URL.Path[5:]); err != nil {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		})
+			ConfigureHttp(name, conf, app)
+		}
 
 		return nil
 	})
 
-	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-		//c.Ui.Info(fmt.Sprintf("Start Git Sync (server: %s/git)", config.PublicServer))
+	for name, conf := range config.Git {
+		if !conf.Enabled {
+			continue
+		}
 
-		s := app.Get("mirror.git").(pkgmirror.MirrorService)
-		s.Serve(state)
+		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
 
-		return nil
+			return func(app *goapp.App, state *goapp.GoroutineState) error {
+				s := app.Get(fmt.Sprintf("mirror.git.%s", name)).(pkgmirror.MirrorService)
+				s.Serve(state)
+
+				return nil
+			}
+		}(name))
+	}
+}
+
+func ConfigureHttp(name string, conf *pkgmirror.GitConfig, app *goapp.App) {
+	mux := app.Get("mux").(*goji.Mux)
+
+	gitService := app.Get(fmt.Sprintf("mirror.git.%s", name)).(*GitService)
+
+	mux.HandleFuncC(NewGitPat(conf.Server), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/zip")
+		if err := gitService.WriteArchive(w, fmt.Sprintf("%s.git", pat.Param(ctx, "path")), pat.Param(ctx, "ref")); err != nil {
+			pkgmirror.SendWithHttpCode(w, 500, err.Error())
+		}
+	})
+
+	mux.HandleFuncC(pat.Get(fmt.Sprintf("/git/%s/*", conf.Server)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if err := gitService.WriteFile(w, r.URL.Path[6+len(conf.Server):]); err != nil {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	})
 }

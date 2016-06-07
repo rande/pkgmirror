@@ -6,6 +6,7 @@
 package git
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 
@@ -14,30 +15,32 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
-	GIT_PATTTERN_URL = regexp.MustCompile(`\/git\/(.*)\/([\w\d]{40}|(.*))\.zip`)
-)
-
-func NewGitPat() goji.Pattern {
-	return &GitPat{}
+func NewGitPat(hostname string) goji.Pattern {
+	return &GitPat{
+		Hostname: hostname,
+		Pattern:  regexp.MustCompile(fmt.Sprintf(`\/git\/%s\/(.*)\/([\w\d]{40}|(.*))\.zip`, hostname)),
+	}
 }
 
 type GitPat struct {
+	Hostname string
+	Pattern  *regexp.Regexp
 }
 
 func (pp *GitPat) Match(ctx context.Context, r *http.Request) context.Context {
-	if results := GIT_PATTTERN_URL.FindStringSubmatch(r.URL.Path); len(results) == 0 {
+	if results := pp.Pattern.FindStringSubmatch(r.URL.Path); len(results) == 0 {
 		return nil
 	} else {
-		return &gitPatMatch{ctx, results[1], results[2], "zip"}
+		return &gitPatMatch{ctx, pp.Hostname, results[1], results[2], "zip"}
 	}
 }
 
 type gitPatMatch struct {
 	context.Context
-	Path   string
-	Ref    string
-	Format string
+	Hostname string
+	Path     string
+	Ref      string
+	Format   string
 }
 
 func (m gitPatMatch) Value(key interface{}) interface{} {
@@ -45,10 +48,13 @@ func (m gitPatMatch) Value(key interface{}) interface{} {
 	switch key {
 	case pattern.AllVariables:
 		return map[pattern.Variable]string{
-			"path":   m.Path,
-			"ref":    m.Ref,
-			"format": m.Format,
+			"hostname": m.Hostname,
+			"path":     m.Path,
+			"ref":      m.Ref,
+			"format":   m.Format,
 		}
+	case pattern.Variable("hostname"):
+		return m.Hostname
 	case pattern.Variable("path"):
 		return m.Path
 	case pattern.Variable("ref"):

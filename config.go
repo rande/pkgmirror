@@ -19,8 +19,9 @@ type NpmConfig struct {
 }
 
 type GitConfig struct {
-	Server string
-	Clone  string
+	Server  string
+	Enabled bool
+	Clone   string
 }
 
 type Config struct {

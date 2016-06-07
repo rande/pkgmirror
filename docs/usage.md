@@ -42,6 +42,20 @@ Next, you need to declare the registry in npm
 Git
 ---
 
+To add new servers:
+
+        [Git]
+            [Git.github]
+            Server = "github.com"
+            Clone = "git@gitbub.com:{path}"
+            Enabled = true
+        
+            [Git.drupal]
+            Server = "drupal.org"
+            Clone = "https://git.drupal.org/{path}"
+            Enabled = true
+
+
 You need to manually add git repository:
 
  1. Connect to the server

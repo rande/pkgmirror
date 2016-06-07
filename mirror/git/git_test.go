@@ -18,7 +18,7 @@ type Expectation struct {
 
 func Test_Archive_Rewrite_Github(t *testing.T) {
 	conf := &GitConfig{
-		Server: "https://mirrors.localhost",
+		PublicServer: "https://mirrors.localhost",
 	}
 
 	values := []*Expectation{
@@ -34,7 +34,7 @@ func Test_Archive_Rewrite_Github(t *testing.T) {
 
 func Test_Archive_Rewrite_Bitbucket(t *testing.T) {
 	conf := &GitConfig{
-		Server: "https://mirrors.localhost",
+		PublicServer: "https://mirrors.localhost",
 	}
 
 	path := GitRewriteArchive(conf, "https://bitbucket.org/sonata-project/exporter/get/b9098b5007c525a238ddf44d578b8efae7bccc72.zip")
@@ -43,7 +43,7 @@ func Test_Archive_Rewrite_Bitbucket(t *testing.T) {
 
 func Test_Archive_Rewrite_Gitlab(t *testing.T) {
 	conf := &GitConfig{
-		Server: "https://mirrors.localhost",
+		PublicServer: "https://mirrors.localhost",
 	}
 
 	path := GitRewriteArchive(conf, "https://gitlab.example.com/sonata-project/exporter/repository/archive.zip?ref=b9098b5007c525a238ddf44d578b8efae7bccc72")
@@ -52,7 +52,7 @@ func Test_Archive_Rewrite_Gitlab(t *testing.T) {
 
 func Test_Repository_Rewrite_Git(t *testing.T) {
 	conf := &GitConfig{
-		Server: "https://mirrors.localhost",
+		PublicServer: "https://mirrors.localhost",
 	}
 
 	values := []*Expectation{
@@ -70,7 +70,7 @@ func Test_Repository_Rewrite_Git(t *testing.T) {
 
 func Test_Repository_Rewrite_SVN(t *testing.T) {
 	conf := &GitConfig{
-		Server: "https://mirrors.localhost",
+		PublicServer: "https://mirrors.localhost",
 	}
 
 	values := []*Expectation{

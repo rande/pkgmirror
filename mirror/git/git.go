@@ -35,10 +35,10 @@ var (
 func NewGitService() *GitService {
 	return &GitService{
 		Config: &GitConfig{
-			Code:    []byte("git"),
-			DataDir: "./data/git",
-			Binary:  "git",
-			Server:  "http://localhost:8000",
+			DataDir:      "./data/git",
+			Binary:       "git",
+			SourceServer: "git@github.com:%s",
+			PublicServer: "http://localhost:8000",
 		},
 		Vault: &vault.Vault{
 			Algo: "no_op",
@@ -50,10 +50,12 @@ func NewGitService() *GitService {
 }
 
 type GitConfig struct {
-	Server  string
-	Code    []byte
-	DataDir string
-	Binary  string
+	PublicServer string
+	SourceServer string
+	Server       string
+	DataDir      string
+	Binary       string
+	Clone        string
 }
 
 type GitService struct {
@@ -73,7 +75,7 @@ func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 	for {
 		gs.Logger.Info("Starting a new sync...")
 
-		gs.SyncServices()
+		gs.syncRepositories(fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server))
 
 		gs.Logger.Info("Wait before starting a new sync...")
 		time.Sleep(60 * time.Second)
@@ -84,33 +86,10 @@ func (gs *GitService) End() error {
 	return nil
 }
 
-func (gs *GitService) SyncServices() {
-	// require structure
-	// hostname/vendor/project.git
-	glob := fmt.Sprintf("%s/*", gs.Config.DataDir)
-	services, _ := filepath.Glob(glob)
-
-	gs.Logger.WithFields(log.Fields{
-		"glob":     glob,
-		"action":   "SyncServices",
-		"services": services,
-	}).Info("Sync repositories")
-
-	var wg sync.WaitGroup
-
-	for _, path := range services {
-		wg.Add(1)
-
-		go gs.SyncRepositories(path, &wg)
-	}
-
-	wg.Wait()
-}
-
-func (gs *GitService) SyncRepositories(service string, wg *sync.WaitGroup) {
+func (gs *GitService) syncRepositories(service string) {
 	gs.Logger.WithFields(log.Fields{
 		"action":  "SyncRepositories",
-		"service": service,
+		"datadir": service,
 	}).Info("Sync service's repositories")
 
 	searchPaths := []string{
@@ -130,7 +109,7 @@ func (gs *GitService) SyncRepositories(service string, wg *sync.WaitGroup) {
 
 	for _, path := range paths {
 		logger := gs.Logger.WithFields(log.Fields{
-			"path":   path,
+			"path":   path[len(service)+1:],
 			"action": "SyncRepositories",
 		})
 
@@ -171,8 +150,6 @@ func (gs *GitService) SyncRepositories(service string, wg *sync.WaitGroup) {
 			"action": "SyncRepositories",
 		}).Debug("Complete the fetch and update-server-info commands")
 	}
-
-	wg.Done()
 }
 
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
@@ -190,7 +167,7 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 		"action": "cacheArchive",
 	})
 
-	vaultKey := fmt.Sprintf("%s/%s", path, ref)
+	vaultKey := fmt.Sprintf("%s:%s/%s", gs.Config.Server, path, ref)
 
 	if !gs.Vault.Has(vaultKey) {
 		logger.Info("Create vault entry")
@@ -240,6 +217,10 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 	return nil
 }
 
+func (gs *GitService) dataFolder() string {
+	return gs.Config.DataDir + string(filepath.Separator) + gs.Config.Server
+}
+
 func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
 	logger := gs.Logger.WithFields(log.Fields{
 		"path":   path,
@@ -247,7 +228,7 @@ func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
 	})
 
 	cmd := exec.Command(gs.Config.Binary, "archive", "--format=zip", ref)
-	cmd.Dir = gs.Config.DataDir + string(filepath.Separator) + path
+	cmd.Dir = gs.dataFolder() + string(filepath.Separator) + path
 
 	stdout, _ := cmd.StdoutPipe()
 
@@ -278,7 +259,7 @@ func (gs *GitService) WriteFile(w io.Writer, path string) error {
 		"action": "WriteFile",
 	})
 
-	if f, err := os.Open(gs.Config.DataDir + string(filepath.Separator) + path); err != nil {
+	if f, err := os.Open(gs.dataFolder() + string(filepath.Separator) + path); err != nil {
 		logger.WithError(err).Error("Error while reading file from the fetch command")
 
 		return err
@@ -295,18 +276,18 @@ func (gs *GitService) WriteFile(w io.Writer, path string) error {
 
 func GitRewriteArchive(config *GitConfig, path string) string {
 	if results := GITHUB_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.Server, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
 	}
 
 	if results := BITBUCKET_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.Server, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
 	}
 
 	if results := GITLAB_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
-		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.Server, results[2], results[3], results[4], results[5])
+		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", config.PublicServer, results[2], results[3], results[4], results[5])
 	}
 
-	return config.Server
+	return config.PublicServer
 }
 
 func GitRewriteRepository(config *GitConfig, path string) string {
@@ -316,8 +297,8 @@ func GitRewriteRepository(config *GitConfig, path string) string {
 	}
 
 	if results := GIT_REPOSITORY.FindStringSubmatch(path); len(results) > 1 {
-		return fmt.Sprintf("%s/git/%s/%s.git", config.Server, results[6], results[8])
+		return fmt.Sprintf("%s/git/%s/%s.git", config.PublicServer, results[6], results[8])
 	}
 
-	return config.Server
+	return config.PublicServer
 }
