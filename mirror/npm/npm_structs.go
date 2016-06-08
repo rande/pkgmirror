@@ -37,7 +37,7 @@ type ShortPackageDefinition struct {
 
 type PackageVersionDefinition struct {
 	Name        string           `json:"name,omitempty"`
-	Description string           `json:"description,omitempty"`
+	Description *json.RawMessage `json:"description,omitempty"`
 	Version     string           `json:"version,omitempty"`
 	Homepage    *json.RawMessage `json:"homepage,omitempty"`
 	Repository  *json.RawMessage `json:"repository,omitempty"`

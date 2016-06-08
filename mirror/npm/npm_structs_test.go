@@ -23,6 +23,7 @@ func Test_Load_Package(t *testing.T) {
 		{"gulp-app-manager", "gulp-app-manager.json"},
 		{"jsontocsv", "jsontocsv.json"},
 		{"qs", "qs.json"},
+		{"repeat", "repeat.json"},
 	}
 
 	for _, f := range files {
