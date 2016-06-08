@@ -33,15 +33,15 @@ type ProvidersResult struct {
 
 // package description
 type Package struct {
-	Name              string   `json:"name"`
-	Abandoned         *json.RawMessage   `json:"abandoned"`
-	Description       string   `json:"description"`
-	Keywords          []string `json:"keywords"`
-	Homepage          string   `json:"homepage"`
-	Version           string   `json:"version"`
-	VersionNormalized string   `json:"version_normalized"`
-	License           []string `json:"license"`
-	Bin               []string `json:"bin"`
+	Name              string           `json:"name"`
+	Abandoned         *json.RawMessage `json:"abandoned"`
+	Description       string           `json:"description"`
+	Keywords          []string         `json:"keywords"`
+	Homepage          string           `json:"homepage"`
+	Version           string           `json:"version"`
+	VersionNormalized string           `json:"version_normalized"`
+	License           []string         `json:"license"`
+	Bin               []string         `json:"bin"`
 	Authors           []struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
@@ -59,17 +59,18 @@ type Package struct {
 		Reference string `json:"reference"`
 		Shasum    string `json:"shasum"`
 	} `json:"dist"`
-	Extra         *json.RawMessage `json:"extra"`
-	TargetDir     string            `json:"target-dir"`
-	Type          string            `json:"type"`
-	Time          time.Time         `json:"time"`
-	Autoload      *json.RawMessage  `json:"autoload"`
-	Conflict      map[string]string `json:"conflict"`
-	Provide       map[string]string `json:"provide"`
-	Require       map[string]string `json:"require"`
-	RequireDevmap map[string]string `json:"require-dev"`
-	Suggest       map[string]string `json:"suggest"`
-	UID           int               `json:"uid"`
+	Extra      *json.RawMessage `json:"extra"`
+	TargetDir  string           `json:"target-dir"`
+	Type       string           `json:"type"`
+	Time       time.Time        `json:"time"`
+	Autoload   *json.RawMessage `json:"autoload"`
+	Replace    *json.RawMessage `json:"replace"`
+	Conflict   *json.RawMessage `json:"conflict"`
+	Provide    *json.RawMessage `json:"provide"`
+	Require    *json.RawMessage `json:"require"`
+	RequireDev *json.RawMessage `json:"require-dev"`
+	Suggest    *json.RawMessage `json:"suggest"`
+	UID        int              `json:"uid"`
 }
 
 // used to load the packages.json file

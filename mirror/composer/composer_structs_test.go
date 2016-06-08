@@ -46,7 +46,6 @@ func Test_Load_Package(t *testing.T) {
 	assert.Equal(t, "Library for working with objects in PHP", p.Packages["0n3s3c/baselibrary"]["0.5.0"].Description)
 }
 
-
 func Test_Load_Package_Project(t *testing.T) {
 	p := &PackageResult{}
 
