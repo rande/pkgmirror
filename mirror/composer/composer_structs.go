@@ -34,7 +34,7 @@ type ProvidersResult struct {
 // package description
 type Package struct {
 	Name              string   `json:"name"`
-	Abandoned         string   `json:"abandoned"`
+	Abandoned         *json.RawMessage   `json:"abandoned"`
 	Description       string   `json:"description"`
 	Keywords          []string `json:"keywords"`
 	Homepage          string   `json:"homepage"`
