@@ -8,11 +8,13 @@ package pkgmirror
 type ComposerConfig struct {
 	Server  string
 	Enabled bool
+	Icon    string
 }
 
 type NpmConfig struct {
 	Server    string
 	Enabled   bool
+	Icon      string
 	Fallbacks []*struct {
 		Server string
 	}
@@ -21,6 +23,7 @@ type NpmConfig struct {
 type GitConfig struct {
 	Server  string
 	Enabled bool
+	Icon    string
 	Clone   string
 }
 

@@ -169,3 +169,10 @@ func (dm *workerManager) Wait() {
 func (dm *workerManager) ResultCallback(fn FuncResult) {
 	dm.resultCallback = fn
 }
+
+func Serialize(w io.Writer, data interface{}) error {
+	encoder := json.NewEncoder(w)
+	err := encoder.Encode(data)
+
+	return err
+}
