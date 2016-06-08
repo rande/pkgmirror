@@ -45,3 +45,14 @@ func Test_Load_Package(t *testing.T) {
 	assert.Equal(t, 2, len(p.Packages["0n3s3c/baselibrary"]))
 	assert.Equal(t, "Library for working with objects in PHP", p.Packages["0n3s3c/baselibrary"]["0.5.0"].Description)
 }
+
+
+func Test_Load_Package_Project(t *testing.T) {
+	p := &PackageResult{}
+
+	LoadTestStruct(t, "../../fixtures/packagist/p/symfony/framework-standard-edition$cb64bc5278d2b6bbf7c02ae4b995f3698df1a210dceb509328b4370e13f3ba33.json", p)
+
+	assert.Equal(t, 1, len(p.Packages))
+	assert.Equal(t, 158, len(p.Packages["symfony/framework-standard-edition"]))
+	assert.Equal(t, "The \"Symfony Standard Edition\" distribution", p.Packages["symfony/framework-standard-edition"]["2.8.x-dev"].Description)
+}

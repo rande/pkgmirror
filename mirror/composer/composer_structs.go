@@ -59,9 +59,7 @@ type Package struct {
 		Reference string `json:"reference"`
 		Shasum    string `json:"shasum"`
 	} `json:"dist"`
-	Extra []struct {
-		BranchAlias map[string]string `json:"branch-alias"`
-	} `json:"extra"`
+	Extra         *json.RawMessage `json:"extra"`
 	TargetDir     string            `json:"target-dir"`
 	Type          string            `json:"type"`
 	Time          time.Time         `json:"time"`
