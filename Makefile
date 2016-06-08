@@ -1,6 +1,12 @@
-.PHONY: help format test install update build release
+.PHONY: help format test install update build release assets
 
 GO_FILES = $(shell find . -type f -name "*.go")
+GO_BINDATA_PREFIX = $(shell pwd)/gui/build
+GO_BINDATA_PATHS = $(shell pwd)/gui/build
+GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
+GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
+GO_BINDATA_PACKAGE = assets
+
 SHA1=$(shell git rev-parse HEAD)
 
 help:     ## Display this help
@@ -16,11 +22,12 @@ test:      ## Run backend tests
 	go test ./...
 	go vet ./...
 
-run:      ## Run server
+run: bin-dev      ## Run server
 	go run cli/main.go run -file ./pkgmirror.toml -log-level=info
 
 install:  ## Install backend dependencies
 	go get github.com/boltdb/bolt/...
+	go get -u github.com/jteeuwen/go-bindata/...
 	(go get github.com/rande/gonode/... || exit 0)
 	go get golang.org/x/tools/cmd/goimports
 	go list -f '{{range .Imports}}{{.}} {{end}}' ./... | xargs go get -v
@@ -29,7 +36,19 @@ install:  ## Install backend dependencies
 update:  ## Update dependencies
 	go get -u all
 
-build: ## build binaries
+bin-dev:                 ## Generate bin assets file
+	go-bindata -dev -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
+
+bin: assets                 ## Generate bin assets file
+	go-bindata -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
+
+assets:  ## build assets
+	cd gui && node_modules/.bin/webpack --config webpack-production.config.js --progress --colors
+
+watch:  ## build assets
+	cd gui && node_modules/.bin/webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors
+
+build: bin ## build binaries
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/darwin/amd64/pkgmirror cli/main.go
 	GOOS=linux  GOARCH=amd64 go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/linux/amd64/pkgmirror  cli/main.go
 	GOOS=linux  GOARCH=386   go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/linux/386/pkgmirror    cli/main.go

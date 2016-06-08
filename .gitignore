@@ -1,5 +1,6 @@
 fixtures/project/vendor
 fixtures/project/composer.lock
 fixtures/project/node_modules
+gui/node_modules
 build
-all.json
+assets/bindata.go
