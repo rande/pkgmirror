@@ -97,13 +97,14 @@ func (ps *ComposerService) SyncPackages() error {
 
 			p := &PackageResult{}
 
+			url := fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey())
+
 			logger.WithFields(log.Fields{
 				"package":     pkg.Package,
 				"source_hash": pkg.HashSource,
 				"worker":      id,
+				"url":         url,
 			}).Debug("Load loading package information")
-
-			url := fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey())
 
 			if err := pkgmirror.LoadRemoteStruct(url, p); err != nil {
 				logger.WithFields(log.Fields{
@@ -395,7 +396,7 @@ func (ps *ComposerService) UpdatePackage(name string) error {
 		b := tx.Bucket(ps.Config.Code)
 		data := b.Get([]byte(pkg.Package))
 
-		if err := json.Unmarshal(data, &pkg); err == nil {
+		if err := json.Unmarshal(data, pkg); err == nil {
 			return err
 		}
 
@@ -432,9 +433,11 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 			"path":    pkg.GetTargetKey(),
 		})
 
-		for _, version := range pkg.PackageResult.Packages[pkg.Package] {
-			version.Dist.URL = git.GitRewriteArchive(ps.Config.PublicServer, version.Dist.URL)
-			version.Source.URL = git.GitRewriteRepository(ps.Config.PublicServer, version.Source.URL)
+		for name := range pkg.PackageResult.Packages {
+			for _, version := range pkg.PackageResult.Packages[name] {
+				version.Dist.URL = git.GitRewriteArchive(ps.Config.PublicServer, version.Dist.URL)
+				version.Source.URL = git.GitRewriteRepository(ps.Config.PublicServer, version.Source.URL)
+			}
 		}
 
 		// compute hash
