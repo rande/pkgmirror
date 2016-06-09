@@ -33,44 +33,44 @@ type ProvidersResult struct {
 
 // package description
 type Package struct {
-	Name              string           `json:"name"`
-	Abandoned         *json.RawMessage `json:"abandoned"`
-	Description       string           `json:"description"`
-	Keywords          []string         `json:"keywords"`
-	Homepage          string           `json:"homepage"`
-	Version           string           `json:"version"`
-	VersionNormalized string           `json:"version_normalized"`
-	License           []string         `json:"license"`
-	Bin               []string         `json:"bin"`
+	Name              string           `json:"name,omitempty"`
+	Abandoned         *json.RawMessage `json:"abandoned,omitempty"`
+	Description       string           `json:"description,omitempty"`
+	Keywords          []string         `json:"keywords,omitempty"`
+	Homepage          string           `json:"homepage,omitempty"`
+	Version           string           `json:"version,omitempty"`
+	VersionNormalized string           `json:"version_normalized,omitempty"`
+	License           []string         `json:"license,omitempty"`
+	Bin               []string         `json:"bin,omitempty"`
 	Authors           []struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Homepage string `json:"homepage"`
 		Role     string `json:"role"`
-	} `json:"authors"`
+	} `json:"authors,omitempty"`
 	Source struct {
 		Type      string `json:"type"`
 		URL       string `json:"url"`
 		Reference string `json:"reference"`
-	} `json:"source"`
+	} `json:"source,omitempty"`
 	Dist struct {
 		Type      string `json:"type"`
 		URL       string `json:"url"`
 		Reference string `json:"reference"`
 		Shasum    string `json:"shasum"`
-	} `json:"dist"`
-	Extra      *json.RawMessage `json:"extra"`
-	TargetDir  string           `json:"target-dir"`
-	Type       string           `json:"type"`
-	Time       time.Time        `json:"time"`
-	Autoload   *json.RawMessage `json:"autoload"`
-	Replace    *json.RawMessage `json:"replace"`
-	Conflict   *json.RawMessage `json:"conflict"`
-	Provide    *json.RawMessage `json:"provide"`
-	Require    *json.RawMessage `json:"require"`
-	RequireDev *json.RawMessage `json:"require-dev"`
-	Suggest    *json.RawMessage `json:"suggest"`
-	UID        int              `json:"uid"`
+	} `json:"dist,omitempty"`
+	Extra      *json.RawMessage `json:"extra,omitempty"`
+	TargetDir  string           `json:"target-dir,omitempty"`
+	Type       string           `json:"type,omitempty"`
+	Time       time.Time        `json:"time,omitempty"`
+	Autoload   *json.RawMessage `json:"autoload,omitempty"`
+	Replace    *json.RawMessage `json:"replace,omitempty"`
+	Conflict   *json.RawMessage `json:"conflict,omitempty"`
+	Provide    *json.RawMessage `json:"provide,omitempty"`
+	Require    *json.RawMessage `json:"require,omitempty"`
+	RequireDev *json.RawMessage `json:"require-dev,omitempty"`
+	Suggest    *json.RawMessage `json:"suggest,omitempty"`
+	UID        int              `json:"uid,omitempty"`
 }
 
 // used to load the packages.json file
