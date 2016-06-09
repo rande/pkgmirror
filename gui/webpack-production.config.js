@@ -7,7 +7,7 @@ const TransferWebpackPlugin = require('transfer-webpack-plugin');
 const config = {
     entry:   [path.join(__dirname, '/src/app.js')],
     // Render source-map file for final build
-    devtool: 'source-map',
+    // devtool: 'source-map',
     // output config
     output:  {
         path:     buildPath, // Path of output file
@@ -20,6 +20,11 @@ const config = {
                 // supresses warnings, usually from module minification
                 warnings: false,
             },
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                'NODE_ENV': JSON.stringify('production')
+            }
         }),
         // Allows error warnings but does not stop compiling.
         new webpack.NoErrorsPlugin(),
