@@ -9,11 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 
+	"github.com/NYTimes/gziphandler"
 	log "github.com/Sirupsen/logrus"
+	"github.com/bakins/logrus-middleware"
 	"github.com/rande/goapp"
 	"goji.io"
-	"golang.org/x/net/context"
 )
 
 func GetApp(conf *Config) (*goapp.App, error) {
@@ -43,19 +45,39 @@ func GetApp(conf *Config) (*goapp.App, error) {
 	app.Set("mux", func(app *goapp.App) interface{} {
 		m := goji.NewMux()
 
-		m.UseC(func(h goji.Handler) goji.Handler {
-			return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				logger.WithFields(log.Fields{
-					"request_method":      r.Method,
-					"request_url":         r.URL.String(),
-					"request_remote_addr": r.RemoteAddr,
-					"request_host":        r.Host,
-				}).Info("Receive HTTP request")
+		m.Use(func(h http.Handler) http.Handler {
+			gzip := gziphandler.GzipHandler(h)
 
-				//t1 := time.Now()
-				h.ServeHTTPC(ctx, w, r)
-				//t2 := time.Now()
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				skip := false
+				path := ""
+				if len(r.URL.Path) > 4 && r.URL.Path[1:4] == "npm" {
+					skip = true
+					path = r.URL.Path[1:4]
+				}
+
+				if len(r.URL.Path) > 8 && r.URL.Path[1:9] == "composer" {
+					skip = true
+					path = r.URL.Path[1:9]
+				}
+
+				fmt.Println(path)
+
+				if skip {
+					h.ServeHTTP(w, r)
+				} else {
+					gzip.ServeHTTP(w, r)
+				}
 			})
+		})
+
+		m.Use(func(h http.Handler) http.Handler {
+			lm := &logrusmiddleware.Middleware{
+				Logger: logger,
+				Name:   "pkgmirror",
+			}
+
+			return lm.Handler(h, "http")
 		})
 
 		return m
