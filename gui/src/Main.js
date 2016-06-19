@@ -3,51 +3,56 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-import React, {Component} from 'react';
+import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
 
-import {connect} from 'react-redux';
-import {MirrorList, MenuList} from './redux/containers';
-import {toggleDrawer} from './redux/apps/guiApp';
+import { connect } from 'react-redux';
+import { MirrorList, MenuList } from './redux/containers';
+import { toggleDrawer } from './redux/apps/guiApp';
 
-class Main extends Component {
-    render() {
-        return (
-            <MuiThemeProvider muiTheme={this.props.Theme}>
-                <div>
-                    <AppBar
-                        title={this.props.Title}
-                        iconClassNameRight="muidocs-icon-navigation-expand-more"
-                        onLeftIconButtonTouchTap={this.props.toggleDrawer}
-                    />
+const Main = props => (
+    <MuiThemeProvider muiTheme={props.Theme}>
+        <div>
+            <AppBar
+              title={props.Title}
+              iconClassNameRight="muidocs-icon-navigation-expand-more"
+              onLeftIconButtonTouchTap={props.toggleDrawer}
+            />
 
-                    <Drawer open={this.props.DrawerOpen}>
-                        <AppBar title={this.props.Title}
-                                onLeftIconButtonTouchTap={this.props.toggleDrawer}
-                        />
+            <Drawer open={props.DrawerOpen}>
+                <AppBar
+                  title={props.Title}
+                  onLeftIconButtonTouchTap={props.toggleDrawer}
+                />
 
-                        <MenuItem>Mirrors</MenuItem>
-                        <MenuList />
-                        <MenuItem>About</MenuItem>
-                    </Drawer>
+                <MenuItem>Mirrors</MenuItem>
+                <MenuList />
+                <MenuItem>About</MenuItem>
+            </Drawer>
 
-                    <MirrorList />
-                </div>
+            <MirrorList />
+        </div>
 
-            </MuiThemeProvider>
-        );
-    };
-}
+    </MuiThemeProvider>
+);
 
-const mapStateToProps = (state) => ({...state.guiApp});
+Main.propTypes = {
+    Theme: React.PropTypes.object,
+    Title: React.PropTypes.object,
+    DrawerOpen: React.PropTypes.object,
+    toggleDrawer: React.PropTypes.func,
+};
+
+
+const mapStateToProps = (state) => ({ ...state.guiApp });
 
 const mapDispatchToProps = (dispatch) => ({
     toggleDrawer: (id) => {
-        dispatch(toggleDrawer(id))
-    }
+        dispatch(toggleDrawer(id));
+    },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Main);

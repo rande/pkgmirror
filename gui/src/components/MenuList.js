@@ -3,27 +3,22 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-import React, {Component} from 'react';
-import {Card, CardActions, CardHeader, CardMedia, CardTitle, CardText} from 'material-ui/Card';
-import {List, ListItem} from 'material-ui/List';
+import React from 'react';
 import Avatar from 'material-ui/Avatar';
 import MenuItem from 'material-ui/MenuItem';
 import Menu from 'material-ui/Menu';
 
-class MenuList extends Component {
-    render() {
-        const {mirrors} = this.props;
+const MenuList = props => (
+    <Menu autoWidth>{props.mirrors.map((mirror, pos) => (<MenuItem
+      key={pos}
+      primaryText={mirror.SourceUrl}
+      leftIcon={<Avatar src={mirror.Icon} />}
+    />))};
+    })}</Menu>
+);
 
-        return (
-            <Menu autoWidth={true}>{mirrors.map((mirror, pos) => {
-                return <MenuItem
-                    key={pos}
-                    primaryText={mirror.SourceUrl}
-                    leftIcon={<Avatar src={mirror.Icon} />}
-                />
-            })}</Menu>
-        );
-    }
-}
+MenuList.propTypes = {
+    mirrors: React.PropTypes.array,
+};
 
-export default MenuList
+export default MenuList;

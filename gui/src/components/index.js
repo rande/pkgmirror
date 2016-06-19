@@ -8,5 +8,5 @@ import MenuList from './MenuList';
 
 export {
     MirrorList,
-    MenuList
-}
+    MenuList,
+};
