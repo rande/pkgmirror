@@ -7,11 +7,9 @@ import { connect } from 'react-redux';
 
 import MirrorList from '../../components/MirrorList';
 
-function mapStateToProps(state) {
-    return {
-        mirrors: state.mirrorApp.mirrors,
-        events: state.mirrorApp.events,
-    };
-}
+const mapStateToProps = (state) => ({
+    mirrors: state.mirrorApp.mirrors,
+    events: state.mirrorApp.events,
+});
 
 export default connect(mapStateToProps)(MirrorList);

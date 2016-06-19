@@ -17,15 +17,15 @@ const Main = props => (
     <MuiThemeProvider muiTheme={props.Theme}>
         <div>
             <AppBar
-              title={props.Title}
-              iconClassNameRight="muidocs-icon-navigation-expand-more"
-              onLeftIconButtonTouchTap={props.toggleDrawer}
+                title={props.Title}
+                iconClassNameRight="muidocs-icon-navigation-expand-more"
+                onLeftIconButtonTouchTap={props.toggleDrawer}
             />
 
             <Drawer open={props.DrawerOpen}>
                 <AppBar
-                  title={props.Title}
-                  onLeftIconButtonTouchTap={props.toggleDrawer}
+                    title={props.Title}
+                    onLeftIconButtonTouchTap={props.toggleDrawer}
                 />
 
                 <MenuItem>Mirrors</MenuItem>
@@ -41,11 +41,10 @@ const Main = props => (
 
 Main.propTypes = {
     Theme: React.PropTypes.object,
-    Title: React.PropTypes.object,
-    DrawerOpen: React.PropTypes.object,
+    Title: React.PropTypes.string,
+    DrawerOpen: React.PropTypes.bool,
     toggleDrawer: React.PropTypes.func,
 };
-
 
 const mapStateToProps = (state) => ({ ...state.guiApp });
 

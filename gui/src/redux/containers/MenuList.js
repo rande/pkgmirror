@@ -7,10 +7,8 @@ import { connect } from 'react-redux';
 
 import MenuList from '../../components/MenuList';
 
-function mapStateToProps(state) {
-    return {
-        mirrors: state.mirrorApp.mirrors,
-    };
-}
+const mapStateToProps = (state) => ({
+    mirrors: state.mirrorApp.mirrors,
+});
 
 export default connect(mapStateToProps)(MenuList);

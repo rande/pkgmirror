@@ -1,0 +1,13 @@
+{
+    "extends": "airbnb",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true
+        }
+    },
+    "rules": {
+        "indent": ["error", 4],
+        "react/jsx-indent": [2, 4],
+        "react/jsx-indent-props": [2, 4]
+    }
+}

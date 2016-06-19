@@ -37,11 +37,11 @@ const MirrorList = props => {
             }
 
             return (<ListItem
-              key={pos}
-              primaryText={mirror.SourceUrl}
-              secondaryText={text}
-              leftAvatar={<Avatar src={mirror.Icon} />}
-              rightIcon={rightIcon}
+                key={pos}
+                primaryText={mirror.SourceUrl}
+                secondaryText={text}
+                leftAvatar={<Avatar src={mirror.Icon} />}
+                rightIcon={rightIcon}
             />);
         })}</List>
     );

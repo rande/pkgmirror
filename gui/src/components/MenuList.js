@@ -9,12 +9,13 @@ import MenuItem from 'material-ui/MenuItem';
 import Menu from 'material-ui/Menu';
 
 const MenuList = props => (
-    <Menu autoWidth>{props.mirrors.map((mirror, pos) => (<MenuItem
-      key={pos}
-      primaryText={mirror.SourceUrl}
-      leftIcon={<Avatar src={mirror.Icon} />}
-    />))};
-    })}</Menu>
+    <Menu autoWidth>
+        {props.mirrors.map((mirror, pos) => (<MenuItem
+            key={pos}
+            primaryText={mirror.SourceUrl}
+            leftIcon={<Avatar src={mirror.Icon} />}
+        />))}
+    </Menu>
 );
 
 MenuList.propTypes = {
