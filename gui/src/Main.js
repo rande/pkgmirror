@@ -4,48 +4,50 @@
 // license that can be found in the LICENSE file.
 
 import React, {Component} from 'react';
-import {deepOrange500} from 'material-ui/styles/colors';
-import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
+import Drawer from 'material-ui/Drawer';
+import MenuItem from 'material-ui/MenuItem';
 
-import {MirrorList} from './components'
-
-const styles = {
-    container: {
-        textAlign:  'center',
-        paddingTop: 200,
-    },
-};
-
-const muiTheme = getMuiTheme({
-    palette: {
-        accent1Color: deepOrange500,
-    },
-});
+import {connect} from 'react-redux';
+import {MirrorList, MenuList} from './redux/containers';
+import {toggleDrawer} from './redux/apps/guiApp';
 
 class Main extends Component {
-    constructor(props, context) {
-        super(props, context);
-    }
-
     render() {
-
         return (
-            <MuiThemeProvider muiTheme={muiTheme}>
+            <MuiThemeProvider muiTheme={this.props.Theme}>
                 <div>
                     <AppBar
-                        title="PkgMirror"
+                        title={this.props.Title}
                         iconClassNameRight="muidocs-icon-navigation-expand-more"
+                        onLeftIconButtonTouchTap={this.props.toggleDrawer}
                     />
 
-                    <MirrorList />
+                    <Drawer open={this.props.DrawerOpen}>
+                        <AppBar title={this.props.Title}
+                                onLeftIconButtonTouchTap={this.props.toggleDrawer}
+                        />
 
+                        <MenuItem>Mirrors</MenuItem>
+                        <MenuList />
+                        <MenuItem>About</MenuItem>
+                    </Drawer>
+
+                    <MirrorList />
                 </div>
 
             </MuiThemeProvider>
         );
-    }
+    };
 }
 
-export default Main;
+const mapStateToProps = (state) => ({...state.guiApp});
+
+const mapDispatchToProps = (dispatch) => ({
+    toggleDrawer: (id) => {
+        dispatch(toggleDrawer(id))
+    }
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Main);

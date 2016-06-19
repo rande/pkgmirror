@@ -8,34 +8,46 @@ import {Card, CardActions, CardHeader, CardMedia, CardTitle, CardText} from 'mat
 import {List, ListItem} from 'material-ui/List';
 import Avatar from 'material-ui/Avatar';
 import ActionInfo from 'material-ui/svg-icons/action/info';
-import Transmit from "react-transmit";
+import ContentBlock from 'material-ui/svg-icons/content/block';
+import PlayCircle from 'material-ui/svg-icons/av/loop';
+import PauseCircle from 'material-ui/svg-icons/av/pause-circle-filled';
 
 class MirrorList extends Component {
-    constructor(props, context) {
-        super(props, context);
-    }
-
     render() {
-        const {mirrors} = this.props;
+        const {mirrors, events} = this.props;
 
         return (
-            <List>{mirrors.map((mirror, pos) => <ListItem
+            <List>{mirrors.map((mirror, pos) => {
+                var rightIcon = <ActionInfo />;
+
+                if (!mirror.Enabled) {
+                    rightIcon = <ContentBlock />;
+                }
+
+                var text = mirror.Type;
+
+                if (mirror.Id in events) {
+                    if (events[mirror.Id].Status == 1) {
+                        rightIcon = <PlayCircle />;
+                    } else {
+                        if (events[mirror.Id].Status == 2) {
+                            rightIcon = <PauseCircle />;
+                        }
+                    }
+
+                    text += " - " + events[mirror.Id].Message;
+                }
+
+                return <ListItem
                     key={pos}
                     primaryText={mirror.SourceUrl}
-                    secondaryText={mirror.Type}
+                    secondaryText={text}
                     leftAvatar={<Avatar src={mirror.Icon} />}
-                    rightIcon={<ActionInfo />}
+                    rightIcon={rightIcon}
                 />
-            )}</List>
+            })}</List>
         );
     }
 }
 
-export default Transmit.createContainer(MirrorList, {
-    initialVariables: {},
-    fragments:        {
-        mirrors () {
-            return fetch("/api/mirrors").then(res => res.json());
-        }
-    }
-});
+export default MirrorList
