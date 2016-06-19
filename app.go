@@ -18,7 +18,7 @@ import (
 	"goji.io"
 )
 
-func GetApp(conf *Config) (*goapp.App, error) {
+func GetApp(conf *Config, l *goapp.Lifecycle) (*goapp.App, error) {
 
 	app := goapp.NewApp()
 
@@ -50,18 +50,17 @@ func GetApp(conf *Config) (*goapp.App, error) {
 
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				skip := false
-				path := ""
 				if len(r.URL.Path) > 4 && r.URL.Path[1:4] == "npm" {
 					skip = true
-					path = r.URL.Path[1:4]
 				}
 
 				if len(r.URL.Path) > 8 && r.URL.Path[1:9] == "composer" {
 					skip = true
-					path = r.URL.Path[1:9]
 				}
 
-				fmt.Println(path)
+				if r.URL.Path == "/api/sse" {
+					skip = true
+				}
 
 				if skip {
 					h.ServeHTTP(w, r)

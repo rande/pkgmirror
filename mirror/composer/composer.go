@@ -38,10 +38,11 @@ func NewComposerService() *ComposerService {
 }
 
 type ComposerService struct {
-	DB     *bolt.DB
-	Config *ComposerConfig
-	Logger *log.Entry
-	lock   bool
+	DB        *bolt.DB
+	Config    *ComposerConfig
+	Logger    *log.Entry
+	lock      bool
+	StateChan chan pkgmirror.State
 }
 
 func (ps *ComposerService) Init(app *goapp.App) error {
@@ -75,6 +76,11 @@ func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 		ps.UpdateEntryPoints()
 		ps.CleanPackages()
 
+		ps.StateChan <- pkgmirror.State{
+			Message: "Wait for a new run",
+			Status:  pkgmirror.STATUS_HOLD,
+		}
+
 		ps.Logger.Info("Wait before starting a new sync...")
 		time.Sleep(60 * 15 * time.Second)
 	}
@@ -90,6 +96,11 @@ func (ps *ComposerService) SyncPackages() error {
 	})
 
 	logger.Info("Starting SyncPackages")
+
+	ps.StateChan <- pkgmirror.State{
+		Message: "Syncing packages",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
 		for raw := range data {
@@ -133,6 +144,11 @@ func (ps *ComposerService) SyncPackages() error {
 	pr := &PackagesResult{}
 
 	logger.Info("Loading packages.json")
+
+	ps.StateChan <- pkgmirror.State{
+		Message: "Loading packages.json",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
 		logger.WithFields(log.Fields{
@@ -200,6 +216,11 @@ func (ps *ComposerService) SyncPackages() error {
 	}
 
 	logger.Info("Wait for download to complete")
+
+	ps.StateChan <- pkgmirror.State{
+		Message: "Wait for download to complete",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	dm.Wait()
 
@@ -274,6 +295,11 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 	})
 
 	logger.Info("Start")
+
+	ps.StateChan <- pkgmirror.State{
+		Message: "Update entry points",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	pkgResult := &PackagesResult{}
 	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pkgResult); err != nil {
@@ -370,6 +396,11 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 
 	ps.Logger.Info("End UpdateEntryPoints")
 
+	ps.StateChan <- pkgmirror.State{
+		Message: "End update entry points",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
+
 	return nil
 }
 
@@ -440,6 +471,11 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 			}
 		}
 
+		ps.StateChan <- pkgmirror.State{
+			Message: fmt.Sprintf("Save package information: %s", pkg.Package),
+			Status:  pkgmirror.STATUS_RUNNING,
+		}
+
 		// compute hash
 		data, _ := json.Marshal(pkg.PackageResult)
 		sha := sha256.Sum256(data)
@@ -479,6 +515,11 @@ func (ps *ComposerService) CleanPackages() error {
 	})
 
 	logger.Info("Start cleaning ...")
+
+	ps.StateChan <- pkgmirror.State{
+		Message: "Start cleaning packages",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	ps.DB.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
@@ -540,5 +581,9 @@ func (ps *ComposerService) CleanPackages() error {
 		return nil
 	})
 
+	ps.StateChan <- pkgmirror.State{
+		Message: "End cleaning packages",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 	return nil
 }

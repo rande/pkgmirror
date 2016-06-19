@@ -29,7 +29,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				continue
 			}
 
-			app.Set(fmt.Sprintf("mirror.npm.%s", name), func(name string, conf *pkgmirror.NpmConfig) func(app *goapp.App) interface{} {
+			app.Set(fmt.Sprintf("pkgmirror.npm.%s", name), func(name string, conf *pkgmirror.NpmConfig) func(app *goapp.App) interface{} {
 				return func(app *goapp.App) interface{} {
 					s := NewNpmService()
 					s.Config.Path = fmt.Sprintf("%s/npm", config.DataDir)
@@ -47,6 +47,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 							Root: fmt.Sprintf("%s/npm/%s_packages", config.DataDir, name),
 						},
 					}
+					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.npm.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
 					s.Init(app)
 
 					return s
@@ -79,7 +80,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		l.Run(func(name string, conf *pkgmirror.NpmConfig) func(app *goapp.App, state *goapp.GoroutineState) error {
 			return func(app *goapp.App, state *goapp.GoroutineState) error {
 				//c.Ui.Info(fmt.Sprintf("Start Npm Sync (server: %s/npm)", config.PublicServer))
-				s := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
+				s := app.Get(fmt.Sprintf("pkgmirror.npm.%s", name)).(*NpmService)
 				s.Serve(state)
 
 				return nil
@@ -90,7 +91,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 
 func ConfigureHttp(name string, conf *pkgmirror.NpmConfig, app *goapp.App) {
 	mux := app.Get("mux").(*goji.Mux)
-	npmService := app.Get(fmt.Sprintf("mirror.npm.%s", name)).(*NpmService)
+	npmService := app.Get(fmt.Sprintf("pkgmirror.npm.%s", name)).(*NpmService)
 
 	mux.HandleFuncC(NewArchivePat(name), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "Content-Type: application/octet-stream")

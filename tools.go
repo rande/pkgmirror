@@ -176,3 +176,20 @@ func Serialize(w io.Writer, data interface{}) error {
 
 	return err
 }
+
+func GetStateChannel(id string, primary chan State) chan State {
+	ch := make(chan State)
+
+	go func() {
+		for {
+			select {
+			case s := <-ch:
+				s.Id = id
+				primary <- s
+			}
+
+		}
+	}()
+
+	return ch
+}

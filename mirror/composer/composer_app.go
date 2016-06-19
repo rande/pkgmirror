@@ -28,7 +28,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				continue
 			}
 
-			app.Set(fmt.Sprintf("mirror.composer.%s", name), func(name string, conf *pkgmirror.ComposerConfig) func(app *goapp.App) interface{} {
+			app.Set(fmt.Sprintf("pkgmirror.composer.%s", name), func(name string, conf *pkgmirror.ComposerConfig) func(app *goapp.App) interface{} {
 
 				return func(app *goapp.App) interface{} {
 					s := NewComposerService()
@@ -40,6 +40,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						"server":  s.Config.SourceServer,
 						"code":    name,
 					})
+					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.composer.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
 					s.Init(app)
 
 					return s
@@ -76,7 +77,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
 
 			return func(app *goapp.App, state *goapp.GoroutineState) error {
-				s := app.Get(fmt.Sprintf("mirror.composer.%s", name)).(pkgmirror.MirrorService)
+				s := app.Get(fmt.Sprintf("pkgmirror.composer.%s", name)).(pkgmirror.MirrorService)
 				s.Serve(state)
 
 				return nil
@@ -87,7 +88,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 
 func ConfigureHttp(name string, conf *pkgmirror.ComposerConfig, app *goapp.App) {
 	mux := app.Get("mux").(*goji.Mux)
-	composerService := app.Get(fmt.Sprintf("mirror.composer.%s", name)).(*ComposerService)
+	composerService := app.Get(fmt.Sprintf("pkgmirror.composer.%s", name)).(*ComposerService)
 
 	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/composer/%s/packages.json", name), http.StatusMovedPermanently)

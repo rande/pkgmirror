@@ -6,10 +6,11 @@
 package api
 
 type ServiceMirror struct {
+	Id        string
 	Type      string
 	Name      string
 	SourceUrl string
 	TargetUrl string
 	Icon      string
-	Enabled bool
+	Enabled   bool
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
 	"github.com/rande/gonode/core/vault"
+	"github.com/rande/pkgmirror"
 )
 
 var (
@@ -59,10 +60,11 @@ type GitConfig struct {
 }
 
 type GitService struct {
-	DB     *bolt.DB
-	Config *GitConfig
-	Logger *log.Entry
-	Vault  *vault.Vault
+	DB        *bolt.DB
+	Config    *GitConfig
+	Logger    *log.Entry
+	Vault     *vault.Vault
+	StateChan chan pkgmirror.State
 }
 
 func (gs *GitService) Init(app *goapp.App) error {
@@ -76,6 +78,11 @@ func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 		gs.Logger.Info("Starting a new sync...")
 
 		gs.syncRepositories(fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server))
+
+		gs.StateChan <- pkgmirror.State{
+			Message: "Wait for a new run",
+			Status:  pkgmirror.STATUS_HOLD,
+		}
 
 		gs.Logger.Info("Wait before starting a new sync...")
 		time.Sleep(60 * time.Second)
@@ -112,6 +119,11 @@ func (gs *GitService) syncRepositories(service string) {
 			"path":   path[len(service)+1:],
 			"action": "SyncRepositories",
 		})
+
+		gs.StateChan <- pkgmirror.State{
+			Message: fmt.Sprintf("Fetch %s", path[len(service)+1:]),
+			Status:  pkgmirror.STATUS_RUNNING,
+		}
 
 		logger.Info("Sync repository")
 

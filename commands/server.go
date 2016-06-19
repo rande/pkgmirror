@@ -63,7 +63,7 @@ func (c *ServerCommand) Run(args []string) int {
 
 	l := goapp.NewLifecycle()
 
-	app, err := pkgmirror.GetApp(config)
+	app, err := pkgmirror.GetApp(config, l)
 
 	if err != nil {
 		c.Ui.Error(err.Error())
@@ -85,6 +85,7 @@ func (c *ServerCommand) Run(args []string) int {
 		//mux.HandleFunc(pat.Get("/debug/pprof/cmdline"), http.HandlerFunc(pprof.Cmdline))
 		//mux.HandleFunc(pat.Get("/debug/pprof/profile"), http.HandlerFunc(pprof.Profile))
 		//mux.HandleFunc(pat.Get("/debug/pprof/symbol"), http.HandlerFunc(pprof.Symbol))
+
 		mux.HandleFunc(pat.Get("/debug/pprof/*"), http.HandlerFunc(pprof.Index))
 
 		http.ListenAndServe(config.InternalServer, mux)
@@ -112,5 +113,5 @@ Options:
   -verbose            Add verbose information to the output
   -log-level          Log level (defaul: warning)
                       possible values: debug, info, warning, error, fatal and panic
-	`)
+`)
 }

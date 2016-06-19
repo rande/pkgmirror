@@ -35,7 +35,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				continue
 			}
 
-			app.Set(fmt.Sprintf("mirror.git.%s", name), func(name string, conf *pkgmirror.GitConfig) func(app *goapp.App) interface{} {
+			app.Set(fmt.Sprintf("pkgmirror.git.%s", name), func(name string, conf *pkgmirror.GitConfig) func(app *goapp.App) interface{} {
 
 				return func(app *goapp.App) interface{} {
 					s := NewGitService()
@@ -47,6 +47,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						"handler": "git",
 						"code":    name,
 					})
+					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.git.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
 					s.Init(app)
 
 					return s
@@ -77,7 +78,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
 
 			return func(app *goapp.App, state *goapp.GoroutineState) error {
-				s := app.Get(fmt.Sprintf("mirror.git.%s", name)).(pkgmirror.MirrorService)
+				s := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(pkgmirror.MirrorService)
 				s.Serve(state)
 
 				return nil
@@ -89,7 +90,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 func ConfigureHttp(name string, conf *pkgmirror.GitConfig, app *goapp.App) {
 	mux := app.Get("mux").(*goji.Mux)
 
-	gitService := app.Get(fmt.Sprintf("mirror.git.%s", name)).(*GitService)
+	gitService := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(*GitService)
 
 	mux.HandleFuncC(NewGitPat(conf.Server), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/zip")

@@ -24,6 +24,7 @@ func Api_GET_MirrorServices(app *goapp.App) func(ctx context.Context, w http.Res
 
 		for code, conf := range config.Git {
 			s := &ServiceMirror{}
+			s.Id = fmt.Sprintf("pkgmirror.git.%s", code)
 			s.Icon = conf.Icon
 			s.Type = "git"
 			s.Name = code
@@ -36,6 +37,7 @@ func Api_GET_MirrorServices(app *goapp.App) func(ctx context.Context, w http.Res
 
 		for code, conf := range config.Npm {
 			s := &ServiceMirror{}
+			s.Id = fmt.Sprintf("pkgmirror.npm.%s", code)
 			s.Icon = conf.Icon
 			s.Type = "npm"
 			s.Name = code
@@ -48,6 +50,7 @@ func Api_GET_MirrorServices(app *goapp.App) func(ctx context.Context, w http.Res
 
 		for code, conf := range config.Composer {
 			s := &ServiceMirror{}
+			s.Id = fmt.Sprintf("pkgmirror.composer.%s", code)
 			s.Icon = conf.Icon
 			s.Type = "composer"
 			s.Name = code
@@ -60,4 +63,10 @@ func Api_GET_MirrorServices(app *goapp.App) func(ctx context.Context, w http.Res
 
 		pkgmirror.Serialize(w, d)
 	}
+}
+
+func Api_GET_Sse(app *goapp.App) func(w http.ResponseWriter, r *http.Request) {
+	brk := app.Get("pkgmirror.sse.broker").(*pkgmirror.SseBroker)
+
+	return brk.Handler
 }

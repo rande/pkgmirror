@@ -54,6 +54,7 @@ type NpmService struct {
 	Vault     *vault.Vault
 	lock      bool
 	dbLock    *sync.Mutex
+	StateChan chan pkgmirror.State
 }
 
 func (ns *NpmService) Init(app *goapp.App) error {
@@ -85,6 +86,11 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 
 		ns.SyncPackages()
 
+		ns.StateChan <- pkgmirror.State{
+			Message: "Wait for a new run",
+			Status:  pkgmirror.STATUS_HOLD,
+		}
+
 		ns.Logger.Info("Wait before starting a new sync...")
 		time.Sleep(60 * 15 * time.Second)
 	}
@@ -106,6 +112,11 @@ func (ns *NpmService) SyncPackages() error {
 	logger.WithFields(log.Fields{
 		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
 	}).Info("Load all packages")
+
+	ns.StateChan <- pkgmirror.State{
+		Message: "Fetching packages metadatas",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
 
 	f, _ := os.Create(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)))
 	defer f.Close()
@@ -223,6 +234,11 @@ func (ns *NpmService) savePackage(pkg *ShortPackageDefinition) error {
 		})
 
 		logger.Info("Save package information")
+
+		ns.StateChan <- pkgmirror.State{
+			Message: fmt.Sprintf("Save package information: %s", pkg.Name),
+			Status:  pkgmirror.STATUS_RUNNING,
+		}
 
 		if data, err := json.Marshal(pkg); err != nil {
 			return err
