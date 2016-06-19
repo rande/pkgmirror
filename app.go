@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/NYTimes/gziphandler"
 	log "github.com/Sirupsen/logrus"

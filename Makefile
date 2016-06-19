@@ -20,14 +20,21 @@ format:  ## Format code to respect CS
 	go fix ./...
 	go vet ./...
 
-test:      ## Run backend tests
+test-backend:      ## Run backend tests
 	go test ./...
 	go vet ./...
+
+test-frontend:      ## Run frontend tests
+	exit 0
+
+test: test-backend test-front
 
 run: bin-dev      ## Run server
 	go run -race cli/main.go run -file ./pkgmirror.toml -log-level=info
 
-install:  ## Install backend dependencies
+install: install-backend install-frontend
+
+install-backend:  ## Install backend dependencies
 	go get github.com/boltdb/bolt/...
 	go get -u github.com/jteeuwen/go-bindata/...
 	(go get github.com/rande/gonode/... || exit 0)
@@ -35,10 +42,13 @@ install:  ## Install backend dependencies
 	go list -f '{{range .Imports}}{{.}} {{end}}' ./... | xargs go get -v
 	go list -f '{{range .TestImports}}{{.}} {{end}}' ./... | xargs go get -v
 
+install-frontend:  ## Install frontend dependencies
+	cd gui && npm install
+
 update:  ## Update dependencies
 	go get -u all
 
-bin-dev:                 ## Generate bin assets file
+bin-dev:                 ## Generate bin dev assets file
 	go-bindata -dev -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
 
 bin: assets                 ## Generate bin assets file
