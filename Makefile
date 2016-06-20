@@ -35,6 +35,7 @@ run: bin-dev      ## Run server
 install: install-backend install-frontend
 
 install-backend:  ## Install backend dependencies
+	go get github.com/aktau/github-release
 	go get github.com/boltdb/bolt/...
 	go get -u github.com/jteeuwen/go-bindata/...
 	(go get github.com/rande/gonode/... || exit 0)
