@@ -5,23 +5,29 @@
 
 import React from 'react';
 import Avatar from 'material-ui/Avatar';
-import MenuItem from 'material-ui/MenuItem';
-import Menu from 'material-ui/Menu';
+import { ListItem } from 'material-ui/List';
 
-const MenuList = props => (
-    <Menu autoWidth>
-        {props.mirrors.map((mirror, pos) => (<MenuItem
-            key={pos}
-            primaryText={mirror.SourceUrl}
-            leftIcon={<Avatar src={mirror.Icon} />}
-            onTouchTap={() => { props.onTouchStart(mirror); }}
-        />))}
-    </Menu>
-);
+const MenuList = props => {
+    const nestedItems = props.mirrors.map((mirror, pos) => (<ListItem
+        key={pos}
+        primaryText={mirror.SourceUrl}
+        leftAvatar={<Avatar src={mirror.Icon} backgroundColor="rgba(0, 0, 0, 0);" />}
+        onTouchTap={() => { props.onTouchStart(mirror); }}
+    />));
+
+    return (<ListItem
+        primaryText="Mirrors"
+        onTouchTap={() => { props.homepage(); }}
+        initiallyOpen
+        nestedItems={nestedItems}
+    />);
+};
+
 
 MenuList.propTypes = {
     mirrors: React.PropTypes.array,
     onTouchStart: React.PropTypes.func,
+    homepage: React.PropTypes.func,
 };
 
 export default MenuList;

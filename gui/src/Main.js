@@ -7,10 +7,10 @@ import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
-import MenuItem from 'material-ui/MenuItem';
 
 import { connect } from 'react-redux';
 import { MirrorList, MenuList, CardMirror } from './redux/containers';
+import { List } from 'material-ui/List';
 
 import { toggleDrawer, hideDrawer } from './redux/apps/guiApp';
 
@@ -38,9 +38,9 @@ const Main = props => (<MuiThemeProvider muiTheme={props.Theme}>
                 title={props.Title}
                 onLeftIconButtonTouchTap={props.toggleDrawer}
             />
-
-            <MenuItem onTouchTap={props.homepage}>Mirrors</MenuItem>
-            <MenuList />
+            <List>
+                <MenuList />
+            </List>
         </Drawer>
 
         <Router history={props.history}>

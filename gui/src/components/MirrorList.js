@@ -40,7 +40,7 @@ const MirrorList = props => {
                 key={pos}
                 primaryText={mirror.SourceUrl}
                 secondaryText={text}
-                leftAvatar={<Avatar src={mirror.Icon} />}
+                leftAvatar={<Avatar src={mirror.Icon} backgroundColor="rgba(0, 0, 0, 0);" />}
                 rightIcon={rightIcon}
                 onTouchTap={() => { props.onTouchStart(mirror); }}
             />);

@@ -19,6 +19,9 @@ const mapDispatchToProps = (dispatch) => ({
         dispatch(push(`/mirror/${mirror.Id}`));
         dispatch(hideDrawer());
     },
+    homepage: () => {
+        dispatch(push('/'));
+    },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(MirrorList);

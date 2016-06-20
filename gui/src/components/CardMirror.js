@@ -7,13 +7,14 @@ import React from 'react';
 
 import { Card, CardHeader, CardText } from 'material-ui/Card';
 import Markdown from 'react-markdown';
+import Avatar from 'material-ui/Avatar';
 
 const CardMirror = props => (
     <Card>
         <CardHeader
             title={props.mirror.SourceUrl}
             subtitle={props.mirror.Type}
-            avatar={props.mirror.Icon}
+            avatar={<Avatar src={props.mirror.Icon} backgroundColor="rgba(0, 0, 0, 0);" />}
         />
         <CardText>
             <Markdown source={props.mirror.Usage} />
