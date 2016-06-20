@@ -1,24 +1,14 @@
 language: go
+go: [1.6]
 sudo: false
-
-matrix:
-  fast_finish: true
-  include:
-    - go: 1.6
-      env: TEST_BACKEND=on
-    - go: 1.6
-      env: TEST_FRONTEND=on TRAVIS_NODE_VERSION="4.4.5"
-    - go: 1.6
-      env: TEST_BUILD=on    TRAVIS_NODE_VERSION="4.4.5"
 
 install:
   # from http://austinpray.com/ops/2015/09/20/change-travis-node-version.html
-  - if [ "$TRAVIS_NODE_VERSION" != "" ]; then rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION; fi;
-  - if [ "$TEST_FRONTEND" = "on" ]; then make install-frontend; fi
-  - if [ "$TEST_BACKEND" = "on" ];  then make install-backend; fi
-  - if [ "$TEST_BUILD" = "on" ];    then make install; fi;
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 4.4.5
+  - make install
 
 script:
-  - if [ "$TEST_BACKEND" = "on" ];  then make test-backend; fi
-  - if [ "$TEST_FRONTEND" = "on" ]; then make test-frontend; fi
-  - if [ "$TEST_BUILD" = "on" ];    then make build; fi;
+  - make test-backend
+  - make test-frontend
+  - if [ "$TRAVIS_BRANCH" = "master" ]; then make release; fi;
+  - if [ "$TRAVIS_BRANCH" != "master" ]; then make build; fi;
