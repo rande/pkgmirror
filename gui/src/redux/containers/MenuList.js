@@ -6,9 +6,22 @@
 import { connect } from 'react-redux';
 
 import MenuList from '../../components/MenuList';
+import { push } from 'react-router-redux';
+import { hideDrawer } from '../apps/guiApp';
 
 const mapStateToProps = (state) => ({
     mirrors: state.mirrorApp.mirrors,
 });
 
-export default connect(mapStateToProps)(MenuList);
+const mapDispatchToProps = (dispatch) => ({
+    homepage: () => {
+        dispatch(push('/'));
+        dispatch(hideDrawer());
+    },
+    onTouchStart: (mirror) => {
+        dispatch(push(`/mirror/${mirror.Id}`));
+        dispatch(hideDrawer());
+    },
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(MenuList);

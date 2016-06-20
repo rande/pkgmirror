@@ -14,12 +14,14 @@ const MenuList = props => (
             key={pos}
             primaryText={mirror.SourceUrl}
             leftIcon={<Avatar src={mirror.Icon} />}
+            onTouchTap={() => { props.onTouchStart(mirror); }}
         />))}
     </Menu>
 );
 
 MenuList.propTypes = {
     mirrors: React.PropTypes.array,
+    onTouchStart: React.PropTypes.func,
 };
 
 export default MenuList;

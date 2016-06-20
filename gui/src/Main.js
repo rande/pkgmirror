@@ -10,47 +10,66 @@ import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
 
 import { connect } from 'react-redux';
-import { MirrorList, MenuList } from './redux/containers';
-import { toggleDrawer } from './redux/apps/guiApp';
+import { MirrorList, MenuList, CardMirror } from './redux/containers';
 
-const Main = props => (
-    <MuiThemeProvider muiTheme={props.Theme}>
-        <div>
+import { toggleDrawer, hideDrawer } from './redux/apps/guiApp';
+
+import { Router, Route, IndexRoute } from 'react-router';
+import { push } from 'react-router-redux';
+
+const Container = props => (
+    <div>{props.children}</div>
+);
+
+Container.propTypes = {
+    children: React.PropTypes.any,
+};
+
+const Main = props => (<MuiThemeProvider muiTheme={props.Theme}>
+    <div>
+        <AppBar
+            title={props.Title}
+            iconClassNameRight="muidocs-icon-navigation-expand-more"
+            onLeftIconButtonTouchTap={props.toggleDrawer}
+        />
+
+        <Drawer open={props.DrawerOpen}>
             <AppBar
                 title={props.Title}
-                iconClassNameRight="muidocs-icon-navigation-expand-more"
                 onLeftIconButtonTouchTap={props.toggleDrawer}
             />
 
-            <Drawer open={props.DrawerOpen}>
-                <AppBar
-                    title={props.Title}
-                    onLeftIconButtonTouchTap={props.toggleDrawer}
-                />
+            <MenuItem onTouchTap={props.homepage}>Mirrors</MenuItem>
+            <MenuList />
+        </Drawer>
 
-                <MenuItem>Mirrors</MenuItem>
-                <MenuList />
-                <MenuItem>About</MenuItem>
-            </Drawer>
-
-            <MirrorList />
-        </div>
-
-    </MuiThemeProvider>
-);
+        <Router history={props.history}>
+            <Route path="/" component={Container}>
+                <IndexRoute component={MirrorList} />
+                <Route path="mirror/:id" component={CardMirror} />
+            </Route>
+        </Router>
+    </div>
+</MuiThemeProvider>);
 
 Main.propTypes = {
     Theme: React.PropTypes.object,
     Title: React.PropTypes.string,
     DrawerOpen: React.PropTypes.bool,
     toggleDrawer: React.PropTypes.func,
+    history: React.PropTypes.object,
+    homepage: React.PropTypes.func,
 };
 
 const mapStateToProps = (state) => ({ ...state.guiApp });
 
 const mapDispatchToProps = (dispatch) => ({
-    toggleDrawer: (id) => {
-        dispatch(toggleDrawer(id));
+    toggleDrawer: () => {
+        dispatch(toggleDrawer());
+    },
+    homepage: () => {
+        dispatch(push('/'));
+        dispatch(hideDrawer());
     },
 });
 

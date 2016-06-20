@@ -6,10 +6,19 @@
 import { connect } from 'react-redux';
 
 import MirrorList from '../../components/MirrorList';
+import { push } from 'react-router-redux';
+import { hideDrawer } from '../apps/guiApp';
 
 const mapStateToProps = (state) => ({
     mirrors: state.mirrorApp.mirrors,
     events: state.mirrorApp.events,
 });
 
-export default connect(mapStateToProps)(MirrorList);
+const mapDispatchToProps = (dispatch) => ({
+    onTouchStart: (mirror) => {
+        dispatch(push(`/mirror/${mirror.Id}`));
+        dispatch(hideDrawer());
+    },
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(MirrorList);

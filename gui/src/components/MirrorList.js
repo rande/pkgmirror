@@ -42,6 +42,7 @@ const MirrorList = props => {
                 secondaryText={text}
                 leftAvatar={<Avatar src={mirror.Icon} />}
                 rightIcon={rightIcon}
+                onTouchTap={() => { props.onTouchStart(mirror); }}
             />);
         })}</List>
     );
@@ -50,6 +51,7 @@ const MirrorList = props => {
 MirrorList.propTypes = {
     mirrors: React.PropTypes.array,
     events: React.PropTypes.object,
+    onTouchStart: React.PropTypes.func,
 };
 
 export default MirrorList;

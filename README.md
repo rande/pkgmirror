@@ -25,3 +25,7 @@ Documentations
  * [Git](docs/git.md)
  * [Npm](docs/npm.md)
  
+GUI
+---
+
+![alt text](docs/pkgmirror.gif "GUI PkgMirror")

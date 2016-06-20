@@ -13,4 +13,5 @@ type ServiceMirror struct {
 	TargetUrl string
 	Icon      string
 	Enabled   bool
+	Usage     string
 }

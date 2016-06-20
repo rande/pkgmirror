@@ -5,8 +5,10 @@
 
 import MirrorList from './MirrorList';
 import MenuList from './MenuList';
+import CardMirror from './CardMirror';
 
 export {
     MirrorList,
     MenuList,
+    CardMirror,
 };
