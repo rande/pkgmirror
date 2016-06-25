@@ -1,28 +1,31 @@
 .PHONY: help format test install update build release assets
 
-GO_FILES = $(shell find . -type f -name "*.go")
-JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 GO_BINDATA_PREFIX = $(shell pwd)/gui/build
 GO_BINDATA_PATHS = $(shell pwd)/gui/build
 GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
+GO_PROJECTS_PATHS = ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm
+GO_FILES = $(shell find $(GO_PROJECTS_PATHS) -type f -name "*.go")
+JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 
 SHA1=$(shell git rev-parse HEAD)
 
 help:     ## Display this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-format:  ## Format code to respect CS
+format-frontend:  ## Format code to respect CS
 	./gui/node_modules/.bin/eslint --fix -c ./gui/.eslintrc $(JS_FILES)
+
+format-backend:  ## Format code to respect CS
 	goimports -w $(GO_FILES)
-	gofmt -l -w -s .
-	go fix ./...
-	go vet ./...
+	gofmt -l -w -s $(GO_FILES)
+	go fix $(GO_PROJECTS_PATHS)
+	go vet $(GO_PROJECTS_PATHS)
 
 test-backend:      ## Run backend tests
-	go test ./...
-	go vet ./...
+	go test $(GO_PROJECTS_PATHS)
+	go vet $(GO_PROJECTS_PATHS)
 
 test-frontend:      ## Run frontend tests
 	exit 0
