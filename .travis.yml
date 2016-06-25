@@ -10,5 +10,5 @@ install:
 script:
   - make test-backend
   - make test-frontend
-  - if [ "$TRAVIS_BRANCH" = "master" ]; then make release; fi;
+  - if [[ "$TRAVIS_BRANCH" = "master" && "$GITHUB_TOKEN" != "" ]]; then make release; fi;
   - if [ "$TRAVIS_BRANCH" != "master" ]; then make build; fi;

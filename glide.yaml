@@ -1,0 +1,37 @@
+package:  github.com/rande/pkgmirror
+excludeDirs:
+- gui
+- build
+- docs
+- fixtures
+owners:
+- name: Thomas Rabaix
+  email: thomas.rabaix@gmail.com
+  homepage: https://thomas.rabaix.net
+import:
+- package: github.com/BurntSushi/toml
+  version: ^0.2.0
+- package: github.com/NYTimes/gziphandler
+- package: github.com/Sirupsen/logrus
+  version: ^0.10.0
+- package: github.com/bakins/logrus-middleware
+- package: github.com/boltdb/bolt
+  version: ^1.2.1
+- package: github.com/mitchellh/cli
+- package: github.com/rande/goapp
+- package: github.com/rande/gonode
+  subpackages:
+  - core/vault
+- package: goji.io
+  version: ^1.0.0
+  subpackages:
+  - pat
+  - pattern
+- package: golang.org/x/net
+  subpackages:
+  - context
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.1.3
+  subpackages:
+  - assert
