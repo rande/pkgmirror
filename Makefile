@@ -36,12 +36,10 @@ install: install-backend install-frontend
 
 install-backend:  ## Install backend dependencies
 	go get github.com/aktau/github-release
-	go get github.com/boltdb/bolt/...
-	go get -u github.com/jteeuwen/go-bindata/...
-	(go get github.com/rande/gonode/... || exit 0)
 	go get golang.org/x/tools/cmd/goimports
-	go list -f '{{range .Imports}}{{.}} {{end}}' ./... | xargs go get -v
-	go list -f '{{range .TestImports}}{{.}} {{end}}' ./... | xargs go get -v
+	go get -u github.com/jteeuwen/go-bindata/...
+	go get github.com/Masterminds/glide
+	glide install
 
 install-frontend:  ## Install frontend dependencies
 	cd gui && npm install
