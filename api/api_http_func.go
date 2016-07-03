@@ -109,3 +109,9 @@ func Api_GET_Sse(app *goapp.App) func(w http.ResponseWriter, r *http.Request) {
 
 	return brk.Handler
 }
+
+func Api_GET_Ping(app *goapp.App) func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	}
+}
