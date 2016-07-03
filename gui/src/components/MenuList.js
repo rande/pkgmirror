@@ -11,7 +11,7 @@ const MenuList = props => {
     const nestedItems = props.mirrors.map((mirror, pos) => (<ListItem
         key={pos}
         primaryText={mirror.SourceUrl}
-        leftAvatar={<Avatar src={mirror.Icon} backgroundColor="rgba(0, 0, 0, 0);" />}
+        leftAvatar={<Avatar src={mirror.Icon} backgroundColor="rgba(0, 0, 0, 0)" />}
         onTouchTap={() => { props.onTouchStart(mirror); }}
     />));
 

@@ -14,7 +14,7 @@ const CardMirror = props => (
         <CardHeader
             title={props.mirror.SourceUrl}
             subtitle={props.mirror.Type}
-            avatar={<Avatar src={props.mirror.Icon} backgroundColor="rgba(0, 0, 0, 0);" />}
+            avatar={<Avatar src={props.mirror.Icon} backgroundColor="rgba(0, 0, 0, 0)" />}
         />
         <CardText>
             <Markdown source={props.mirror.Usage} />
