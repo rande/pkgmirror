@@ -74,18 +74,41 @@ func (gs *GitService) Init(app *goapp.App) error {
 }
 
 func (gs *GitService) Serve(state *goapp.GoroutineState) error {
-	for {
+	syncEnd := make(chan bool)
+
+	sync := func() {
 		gs.Logger.Info("Starting a new sync...")
 
 		gs.syncRepositories(fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server))
 
-		gs.StateChan <- pkgmirror.State{
-			Message: "Wait for a new run",
-			Status:  pkgmirror.STATUS_HOLD,
-		}
+		syncEnd <- true
+	}
 
-		gs.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(60 * time.Second)
+	// start the first sync
+	go sync()
+
+	for {
+		select {
+		case <-state.In:
+			return nil
+
+		case <-syncEnd:
+			gs.StateChan <- pkgmirror.State{
+				Message: "Wait for a new run",
+				Status:  pkgmirror.STATUS_HOLD,
+			}
+
+			gs.Logger.Info("Wait before starting a new sync...")
+
+			// we recursively call sync unless a state.In comes in to exist the current
+			// go routine (ie, the Serve function). This might not close the sync processus
+			// completely. We need to have a proper channel (queue mode) for git fetch.
+			// This will probably make this current code obsolete.
+			go func() {
+				time.Sleep(60 * time.Second)
+				sync()
+			}()
+		}
 	}
 }
 

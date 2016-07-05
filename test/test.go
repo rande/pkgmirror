@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	godebug "runtime/debug"
 	"strings"
 	"testing"
@@ -21,6 +20,7 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/api"
+	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/stretchr/testify/assert"
 	"goji.io"
 )
@@ -98,16 +98,25 @@ func RunHttpTest(t *testing.T, f func(t *testing.T, ts *httptest.Server, app *go
 	l := goapp.NewLifecycle()
 
 	config := &pkgmirror.Config{
-		DataDir:        os.TempDir() + "/pkgmirror/data",
-		CacheDir:       os.TempDir() + "/pkmirror/cache",
+		DataDir:        "/tmp/pkgmirror/data",
+		CacheDir:       "/tmp/pkmirror/cache",
 		PublicServer:   "http://localhost:8000",
 		InternalServer: "127.0.0.1:8000",
 		LogLevel:       "debug",
+		Git: map[string]*pkgmirror.GitConfig{
+			"local": {
+				Server:  "local",
+				Enabled: true,
+				Icon:    "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png",
+				Clone:   "",
+			},
+		},
 	}
 
 	app, err := pkgmirror.GetApp(config, l)
 
 	api.ConfigureApp(config, l)
+	git.ConfigureApp(config, l)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, app)

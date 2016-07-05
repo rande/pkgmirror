@@ -23,8 +23,13 @@ format-backend:  ## Format code to respect CS
 	go fix $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
-test-backend:      ## Run backend tests
-	go test $(GO_PROJECTS_PATHS)
+prepare-test:
+	rm -rf /tmp/pkgmirror
+	mkdir -p /tmp/pkgmirror/{cache,data/npm,data/composer}
+	cd fixtures/git && git clone --mirror foo.bare /tmp/pkgmirror/data/git/local/foo.git && git update-server-info
+
+test-backend: prepare-test      ## Run backend tests
+	go test -v $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
 test-frontend:      ## Run frontend tests
