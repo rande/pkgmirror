@@ -162,8 +162,8 @@ func (dm *workerManager) Add(raw interface{}) {
 
 func (dm *workerManager) Wait() {
 	// close task related actions
-	close(dm.add)        // close for range loop
-	dm.wg.Wait() // wait for other to
+	close(dm.add) // close for range loop
+	dm.wg.Wait()  // wait for other to
 
 	// close result related actions
 	close(dm.result)

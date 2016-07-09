@@ -7,20 +7,18 @@ package mirror
 
 import (
 	"fmt"
-	"net/http/httptest"
 	"testing"
 
 	"encoding/json"
 
-	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror/api"
 	"github.com/rande/pkgmirror/test"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Api_Ping(t *testing.T) {
-	test.RunHttpTest(t, func(t *testing.T, ts *httptest.Server, app *goapp.App) {
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/ping", ts.URL))
+	test.RunHttpTest(t, func(args *test.Arguments) {
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/ping", args.TestServer.URL))
 
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
@@ -29,8 +27,8 @@ func Test_Api_Ping(t *testing.T) {
 }
 
 func Test_Api_List(t *testing.T) {
-	test.RunHttpTest(t, func(t *testing.T, ts *httptest.Server, app *goapp.App) {
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/mirrors", ts.URL))
+	test.RunHttpTest(t, func(args *test.Arguments) {
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/mirrors", args.TestServer.URL))
 
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
@@ -42,6 +40,6 @@ func Test_Api_List(t *testing.T) {
 		err = json.Unmarshal(data, &mirrors)
 		assert.NoError(t, err)
 
-		assert.Equal(t, 1, len(mirrors))
+		assert.Equal(t, 2, len(mirrors))
 	})
 }

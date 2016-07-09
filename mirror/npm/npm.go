@@ -81,18 +81,42 @@ func (ns *NpmService) Init(app *goapp.App) error {
 func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 	ns.Logger.Info("Starting Npm Service")
 
-	for {
+	syncEnd := make(chan bool)
+
+	sync := func() {
 		ns.Logger.Info("Starting a new sync...")
 
 		ns.SyncPackages()
 
-		ns.StateChan <- pkgmirror.State{
-			Message: "Wait for a new run",
-			Status:  pkgmirror.STATUS_HOLD,
-		}
+		syncEnd <- true
+	}
 
-		ns.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(60 * 15 * time.Second)
+	// start the first sync
+	go sync()
+
+	for {
+		select {
+		case <-state.In:
+			ns.DB.Close()
+			return nil
+
+		case <-syncEnd:
+			ns.StateChan <- pkgmirror.State{
+				Message: "Wait for a new run",
+				Status:  pkgmirror.STATUS_HOLD,
+			}
+
+			ns.Logger.Info("Wait before starting a new sync...")
+
+			// we recursively call sync unless a state.In comes in to exist the current
+			// go routine (ie, the Serve function). This might not close the sync processus
+			// completely. We need to have a proper channel (queue mode) for git fetch.
+			// This will probably make this current code obsolete.
+			go func() {
+				time.Sleep(60 * 15 * time.Second)
+				sync()
+			}()
+		}
 	}
 }
 
@@ -118,7 +142,15 @@ func (ns *NpmService) SyncPackages() error {
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
 
-	f, _ := os.Create(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)))
+	filename := fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code))
+	f, err := os.Create(filename)
+
+	if err != nil {
+		logger.WithError(err).WithField("file", filename).Error("Unable to open file")
+
+		return err
+	}
+
 	defer f.Close()
 
 	if resp, err := http.Get(fmt.Sprintf("%s/-/all", ns.Config.SourceServer)); err != nil {
@@ -126,9 +158,13 @@ func (ns *NpmService) SyncPackages() error {
 
 		return err
 	} else {
-		io.Copy(f, resp.Body)
+		defer resp.Body.Close()
 
-		resp.Body.Close()
+		if _, err := io.Copy(f, resp.Body); err != nil {
+			logger.WithError(err).Error("Unable to store packages metadata file (/-/all)")
+
+			return err
+		}
 	}
 
 	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {

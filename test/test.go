@@ -9,26 +9,65 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"os/exec"
 	godebug "runtime/debug"
 	"strings"
 	"testing"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/api"
 	"github.com/rande/pkgmirror/mirror/git"
+	"github.com/rande/pkgmirror/mirror/npm"
 	"github.com/stretchr/testify/assert"
 	"goji.io"
 )
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func RandStringBytesMaskImprSrc(n int) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
+}
 
 type Response struct {
 	*http.Response
 	RawBody  []byte
 	bodyRead bool
+}
+
+type Arguments struct {
+	TestServer   *httptest.Server
+	MockedServer *httptest.Server
+	App          *goapp.App
+	T            *testing.T
 }
 
 func (r Response) GetBody() []byte {
@@ -94,12 +133,64 @@ func RunRequest(method string, path string, options ...interface{}) (*Response, 
 	return &Response{Response: resp}, err
 }
 
-func RunHttpTest(t *testing.T, f func(t *testing.T, ts *httptest.Server, app *goapp.App)) {
+func RunHttpTest(t *testing.T, f func(args *Arguments)) {
+
+	baseFolder := fmt.Sprintf("%s/pkgmirror/%s", os.TempDir(), RandStringBytesMaskImprSrc(10))
+
+	if err := os.MkdirAll(fmt.Sprintf("%s/data/npm", baseFolder), 0755); err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if err := os.MkdirAll(fmt.Sprintf("%s/data/composer", baseFolder), 0755); err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if err := os.MkdirAll(fmt.Sprintf("%s/data/git", baseFolder), 0755); err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if err := os.MkdirAll(fmt.Sprintf("%s/cache/git", baseFolder), 0755); err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/data/git/local/foo.git", baseFolder), " ")...)
+
+	if err := cmd.Start(); err != nil {
+		assert.NoError(t, err)
+
+		return
+	}
+	if err := cmd.Wait(); err != nil {
+		assert.NoError(t, err)
+
+		return
+	}
+
+	cmd = exec.Command("git", "update-server-info")
+	cmd.Dir = fmt.Sprintf("%s/data/git/local/foo.git", baseFolder)
+
+	if err := cmd.Start(); err != nil {
+		assert.NoError(t, err)
+
+		return
+	}
+
+	if err := cmd.Wait(); err != nil {
+		assert.NoError(t, err)
+
+		return
+	}
+
 	l := goapp.NewLifecycle()
 
+	fs := http.FileServer(http.Dir("../../fixtures/mock"))
+
+	ms := httptest.NewServer(fs)
+
 	config := &pkgmirror.Config{
-		DataDir:        "/tmp/pkgmirror/data",
-		CacheDir:       "/tmp/pkmirror/cache",
+		DataDir:        fmt.Sprintf("%s/data", baseFolder),
+		CacheDir:       fmt.Sprintf("%s/cache", baseFolder),
 		PublicServer:   "http://localhost:8000",
 		InternalServer: "127.0.0.1:8000",
 		LogLevel:       "debug",
@@ -111,18 +202,25 @@ func RunHttpTest(t *testing.T, f func(t *testing.T, ts *httptest.Server, app *go
 				Clone:   "",
 			},
 		},
+		Npm: map[string]*pkgmirror.NpmConfig{
+			"npm": {
+				Server:  ms.URL + "/npm",
+				Enabled: true,
+				Icon:    "https://cldup.com/Rg6WLgqccB.svg",
+			},
+		},
 	}
 
 	app, err := pkgmirror.GetApp(config, l)
 
 	api.ConfigureApp(config, l)
 	git.ConfigureApp(config, l)
+	npm.ConfigureApp(config, l)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, app)
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
-
 		mux := app.Get("mux").(*goji.Mux)
 
 		ts := httptest.NewServer(mux)
@@ -137,10 +235,15 @@ func RunHttpTest(t *testing.T, f func(t *testing.T, ts *httptest.Server, app *go
 			}
 		}()
 
-		f(t, ts, app)
+		f(&Arguments{
+			TestServer:   ts,
+			MockedServer: ms,
+			T:            t,
+			App:          app,
+		})
 
-		ts.CloseClientConnections()
-		ts.Close()
+		//ms.CloseClientConnections()
+		//ms.Close()
 
 		return nil
 	})
