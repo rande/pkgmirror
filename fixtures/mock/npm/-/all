@@ -1,0 +1,50 @@
+{
+  "_updated": 1465418430525,
+  "angular-nvd3-nb": {
+    "name": "angular-nvd3-nb",
+    "description": "An AngularJS directive for NVD3.js reusable charting library",
+    "dist-tags": {
+      "latest": "1.0.5-dash20160130"
+    },
+    "maintainers": [
+      {
+        "name": "nickbenes",
+        "email": "nickbenes@gmail.com"
+      }
+    ],
+    "homepage": "https://github.com/nickbenes/angular-nvd3",
+    "keywords": [
+      "angular",
+      "nvd3",
+      "d3",
+      "directive",
+      "visualization",
+      "charts",
+      "svg"
+    ],
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/nickbenes/angular-nvd3.git"
+    },
+    "author": {
+      "name": "Nick Benes"
+    },
+    "bugs": {
+      "url": "https://github.com/nickbenes/angular-nvd3/issues"
+    },
+    "license": "MIT",
+    "readmeFilename": "README.md",
+    "time": {
+      "modified": "2016-01-30T08:34:22.770Z"
+    },
+    "versions": {
+      "1.0.5-dash20160130": "latest"
+    }
+  },
+  "angular-oauth": {
+    "name": "angular-oauth",
+    "time": {
+      "modified": "2015-01-12T21:06:46.770Z"
+    }
+  }
+}

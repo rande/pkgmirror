@@ -91,5 +91,5 @@ func Test_WorkerManager_Result(t *testing.T) {
 
 	m.Wait()
 
-	assert.Equal(t, cpt, int32(15))
+	assert.Equal(t, int32(15), cpt)
 }

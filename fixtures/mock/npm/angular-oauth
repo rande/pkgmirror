@@ -1,0 +1,30 @@
+{
+  "_id": "angular-oauth",
+  "_rev": "3-bcf2c8638122d39e4039e7e7e119faf3",
+  "name": "angular-oauth",
+  "time": {
+    "modified": "2015-01-12T21:06:46.770Z",
+    "created": "2015-01-12T21:06:46.770Z",
+    "1.0.0": "2015-01-12T21:06:46.770Z",
+    "unpublished": {
+      "name": "penso",
+      "time": "2015-01-12T21:22:47.817Z",
+      "tags": {
+        "latest": "1.0.0"
+      },
+      "maintainers": [
+        {
+          "name": "penso",
+          "email": "rui.penso@gmail.com"
+        }
+      ],
+      "description": "Angular OAuth",
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  },
+  "_attachments": {
+
+  }
+}

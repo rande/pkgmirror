@@ -33,6 +33,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		mux := app.Get("mux").(*goji.Mux)
 		mux.HandleFuncC(pat.Get("/api/mirrors"), Api_GET_MirrorServices(app))
 		mux.HandleFunc(pat.Get("/api/sse"), Api_GET_Sse(app))
+		mux.HandleFuncC(pat.Get("/api/ping"), Api_GET_Ping(app))
 
 		return nil
 	})
@@ -71,6 +72,8 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				data, _ := json.Marshal(&s)
 
 				brk.Notifier <- data
+			case <-state.In:
+				return nil // exit
 			}
 		}
 	})

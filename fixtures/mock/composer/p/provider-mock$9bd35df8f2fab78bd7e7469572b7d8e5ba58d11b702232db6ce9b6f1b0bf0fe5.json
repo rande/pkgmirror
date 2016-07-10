@@ -1,0 +1,10 @@
+{
+    "providers": {
+        "0n3s3c\/baselibrary": {
+            "sha256": "f00e050833c8ac3323177dc59eb69680fc0920c1e881835a1e64adcb60ea5157"
+        },
+        "symfony\/framework-standard-edition": {
+            "sha256": "c08c23d91489ab0c8098739084a5f2873c331cf374268af722c5867038f9c0be"
+        }
+    }
+}

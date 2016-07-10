@@ -5,7 +5,7 @@ GO_BINDATA_PATHS = $(shell pwd)/gui/build
 GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
-GO_PROJECTS_PATHS = ./ ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm
+GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm
 GO_FILES = $(shell find $(GO_PROJECTS_PATHS) -maxdepth 1 -type f -name "*.go")
 JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 
@@ -23,8 +23,8 @@ format-backend:  ## Format code to respect CS
 	go fix $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
-test-backend:      ## Run backend tests
-	go test $(GO_PROJECTS_PATHS)
+test-backend:     ## Run backend tests
+	go test -v -race -timeout 60s $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
 test-frontend:      ## Run frontend tests

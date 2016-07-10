@@ -1,0 +1,96 @@
+{
+  "packages": {
+    "0n3s3c\/baselibrary": {
+      "0.5.0": {
+        "name": "0n3s3c\/baselibrary",
+        "description": "Library for working with objects in PHP",
+        "keywords": [
+          "library",
+          "collection"
+        ],
+        "homepage": "",
+        "version": "0.5.0",
+        "version_normalized": "0.5.0.0",
+        "license": [
+          "MIT"
+        ],
+        "authors": [
+          {
+            "name": "Joshua Jones",
+            "email": "joshua.jones.software@gmail.com"
+          }
+        ],
+        "source": {
+          "type": "git",
+          "url": "https:\/\/github.com\/0N3S3C\/BaseLibrary.git",
+          "reference": "27892d3e65147f2eb706dec13c5d9e454a692ce6"
+        },
+        "dist": {
+          "type": "zip",
+          "url": "https:\/\/api.github.com\/repos\/0N3S3C\/BaseLibrary\/zipball\/27892d3e65147f2eb706dec13c5d9e454a692ce6",
+          "reference": "27892d3e65147f2eb706dec13c5d9e454a692ce6",
+          "shasum": ""
+        },
+        "type": "library",
+        "time": "2016-03-25T17:29:35+00:00",
+        "autoload": {
+          "psr-4": {
+            "Base\\": "src\/Base"
+          }
+        },
+        "require": {
+          "php": ">=5.5.0"
+        },
+        "require-dev": {
+          "phpunit\/phpunit": "^5.0"
+        },
+        "uid": 752383
+      },
+      "0.5.1": {
+        "name": "0n3s3c\/baselibrary",
+        "description": "Library for working with objects in PHP",
+        "keywords": [
+          "library",
+          "collection"
+        ],
+        "homepage": "",
+        "version": "0.5.1",
+        "version_normalized": "0.5.1.0",
+        "license": [
+          "MIT"
+        ],
+        "authors": [
+          {
+            "name": "Joshua Jones",
+            "email": "joshua.jones.software@gmail.com"
+          }
+        ],
+        "source": {
+          "type": "git",
+          "url": "https:\/\/github.com\/0N3S3C\/BaseLibrary.git",
+          "reference": "8de06188fdf335651ff2114a1f7e4fb343da4f0d"
+        },
+        "dist": {
+          "type": "zip",
+          "url": "https:\/\/api.github.com\/repos\/0N3S3C\/BaseLibrary\/zipball\/8de06188fdf335651ff2114a1f7e4fb343da4f0d",
+          "reference": "8de06188fdf335651ff2114a1f7e4fb343da4f0d",
+          "shasum": ""
+        },
+        "type": "library",
+        "time": "2016-03-28T12:57:25+00:00",
+        "autoload": {
+          "psr-4": {
+            "Base\\": "src\/Base"
+          }
+        },
+        "require": {
+          "php": ">=5.5.0"
+        },
+        "require-dev": {
+          "phpunit\/phpunit": "^5.0"
+        },
+        "uid": 754198
+      }
+    }
+  }
+}
