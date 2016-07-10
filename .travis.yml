@@ -13,7 +13,9 @@ install:
   - make install
 
 script:
-  - make test-backend
+  - go get github.com/mattn/goveralls
+  - make coverage-backend
+  - goveralls -coverprofile=build/pkgmirror.coverage -service=travis-ci
   - make test-frontend
   - if [[ "$TRAVIS_BRANCH" = "master" && "$GITHUB_TOKEN" != "" ]]; then make release; fi;
   - if [ "$TRAVIS_BRANCH" != "master" ]; then make build; fi;
