@@ -23,7 +23,7 @@ func Test_Composer_Get_PackagesJson(t *testing.T) {
 		// wait for the synchro to complete
 		time.Sleep(1 * time.Second)
 
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/comp/packages.json", args.TestServer.URL))
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/packagist/packages.json", args.TestServer.URL))
 
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
@@ -37,7 +37,7 @@ func Test_Composer_Redirect(t *testing.T) {
 		// wait for the synchro to complete
 		time.Sleep(1 * time.Second)
 
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/comp/p/symfony/framework-standard-edition", args.TestServer.URL))
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/packagist/p/symfony/framework-standard-edition", args.TestServer.URL))
 
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
@@ -48,5 +48,18 @@ func Test_Composer_Redirect(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, "symfony/framework-standard-edition", v.Packages["symfony/framework-standard-edition"]["2.1.x-dev"].Name)
+	})
+}
+
+func Test_Deprecated_Redirect(t *testing.T) {
+	optin := &test.TestOptin{Composer: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		time.Sleep(1 * time.Second)
+
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/packagist/packages.json", args.TestServer.URL))
+
+		assert.NoError(t, err)
+		assert.Equal(t, 200, res.StatusCode)
 	})
 }

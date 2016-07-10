@@ -120,10 +120,6 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 	}
 }
 
-func (ns *NpmService) End() error {
-	return nil
-}
-
 func (ns *NpmService) SyncPackages() error {
 	logger := ns.Logger.WithFields(log.Fields{
 		"action": "SyncPackages",

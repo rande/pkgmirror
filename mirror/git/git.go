@@ -112,10 +112,6 @@ func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 	}
 }
 
-func (gs *GitService) End() error {
-	return nil
-}
-
 func (gs *GitService) syncRepositories(service string) {
 	gs.Logger.WithFields(log.Fields{
 		"action":  "SyncRepositories",

@@ -110,10 +110,6 @@ func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 	}
 }
 
-func (ps *ComposerService) End() error {
-	return nil
-}
-
 func (ps *ComposerService) SyncPackages() error {
 	logger := ps.Logger.WithFields(log.Fields{
 		"action": "SyncPackages",

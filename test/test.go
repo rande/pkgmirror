@@ -217,7 +217,7 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 			},
 		},
 		Composer: map[string]*pkgmirror.ComposerConfig{
-			"comp": {
+			"packagist": {
 				Server:  ms.URL + "/composer",
 				Enabled: optin.Composer,
 				Icon:    "https://getcomposer.org/img/logo-composer-transparent.png",

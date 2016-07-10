@@ -37,3 +37,31 @@ func Test_Npm_Pat_Archive(t *testing.T) {
 	assert.Equal(t, "0.0.1", result.Value(pattern.Variable("version")))
 	assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
 }
+
+func Test_Npm_Pat_AllVariables(t *testing.T) {
+	p := NewArchivePat("npm")
+
+	c, r := mustReq("GET", "/npm/npm/aspace/-/aspace-0.0.1.tgz")
+
+	result := p.Match(c, r)
+
+	assert.NotNil(t, result)
+
+	vars := result.Value(pattern.AllVariables).(map[pattern.Variable]string)
+
+	assert.Equal(t, "aspace", vars["package"])
+	assert.Equal(t, "0.0.1", vars["version"])
+	assert.Equal(t, "tgz", vars["format"])
+}
+
+func Test_Npm_Pat_OtherVariable(t *testing.T) {
+	p := NewArchivePat("npm")
+
+	c, r := mustReq("GET", "/npm/npm/aspace/-/aspace-0.0.1.tgz")
+
+	result := p.Match(c, r)
+
+	assert.NotNil(t, result)
+
+	assert.Nil(t, result.Value(pattern.Variable("foo")))
+}
