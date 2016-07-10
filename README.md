@@ -2,12 +2,12 @@ Pkg Mirrors
 ===========
 
 [![Build Status](https://travis-ci.org/rande/pkgmirror.svg?branch=master)](https://travis-ci.org/rande/pkgmirror)
-[![Coverage Status](https://coveralls.io/repos/github/rande/pkgmirror/badge.svg?branch=master)](https://coveralls.io/github/rande/pkgmirror?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/rande/pkgmirror/badge.svg)](https://coveralls.io/github/rande/pkgmirror)
 
 This project aims to provides mirroring features for:
  - composer: the php package manager
  - git: clone mirror and sync repo repository
- - more to come
+ - npm: clone the main registry
 
 *Please note*, if you only need to proxy packagist, please consider [Toran Proxy](https://toranproxy.com/) 
 as a strong alternative. 
