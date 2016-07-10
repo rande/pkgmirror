@@ -115,6 +115,7 @@ func NewWorkerManager(process int, processCallback FuncProcess) *workerManager {
 		add:             make(chan interface{}),
 		result:          make(chan interface{}),
 		wg:              sync.WaitGroup{},
+		resultDone:      make(chan bool),
 	}
 }
 
@@ -129,6 +130,7 @@ type workerManager struct {
 	processCallback FuncProcess
 	resultCallback  FuncResult
 	wg              sync.WaitGroup
+	resultDone      chan bool
 }
 
 func (dm *workerManager) Start() {
@@ -146,10 +148,10 @@ func (dm *workerManager) Start() {
 		// if we get result increment wg by one
 		go func() {
 			for raw := range dm.result {
-				dm.wg.Add(1)
 				dm.resultCallback(raw)
-				dm.wg.Done()
 			}
+
+			dm.resultDone <- true
 		}()
 	}
 }
@@ -159,11 +161,16 @@ func (dm *workerManager) Add(raw interface{}) {
 }
 
 func (dm *workerManager) Wait() {
-	close(dm.add)
+	// close task related actions
+	close(dm.add)        // close for range loop
+	dm.wg.Wait() // wait for other to
 
-	dm.wg.Wait()
-
+	// close result related actions
 	close(dm.result)
+
+	if dm.resultCallback != nil {
+		<-dm.resultDone
+	}
 }
 
 func (dm *workerManager) ResultCallback(fn FuncResult) {
