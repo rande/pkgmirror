@@ -69,20 +69,44 @@ func (ps *ComposerService) Init(app *goapp.App) error {
 func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 	ps.Logger.Info("Starting Composer Service")
 
-	for {
+	syncEnd := make(chan bool)
+
+	sync := func() {
 		ps.Logger.Info("Starting a new sync...")
 
 		ps.SyncPackages()
 		ps.UpdateEntryPoints()
 		ps.CleanPackages()
 
-		ps.StateChan <- pkgmirror.State{
-			Message: "Wait for a new run",
-			Status:  pkgmirror.STATUS_HOLD,
-		}
+		syncEnd <- true
+	}
 
-		ps.Logger.Info("Wait before starting a new sync...")
-		time.Sleep(60 * 15 * time.Second)
+	// start the first sync
+	go sync()
+
+	for {
+		select {
+		case <-state.In:
+			ps.DB.Close()
+			return nil
+
+		case <-syncEnd:
+			ps.StateChan <- pkgmirror.State{
+				Message: "Wait for a new run",
+				Status:  pkgmirror.STATUS_HOLD,
+			}
+
+			ps.Logger.Info("Wait before starting a new sync...")
+
+			// we recursively call sync unless a state.In comes in to exist the current
+			// go routine (ie, the Serve function). This might not close the sync processus
+			// completely. We need to have a proper channel (queue mode) for git fetch.
+			// This will probably make this current code obsolete.
+			go func() {
+				time.Sleep(60 * 15 * time.Second)
+				sync()
+			}()
+		}
 	}
 }
 

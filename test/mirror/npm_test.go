@@ -19,7 +19,9 @@ import (
 
 func Test_Npm_Get_Package(t *testing.T) {
 
-	test.RunHttpTest(t, func(args *test.Arguments) {
+	optin := &test.TestOptin{Npm: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
 		res, err := test.RunRequest("GET", fmt.Sprintf("%s/npm/angular-oauth", args.MockedServer.URL))
 
 		assert.NoError(t, err)

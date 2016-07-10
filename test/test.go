@@ -24,6 +24,7 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/api"
+	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/mirror/npm"
 	"github.com/stretchr/testify/assert"
@@ -133,7 +134,13 @@ func RunRequest(method string, path string, options ...interface{}) (*Response, 
 	return &Response{Response: resp}, err
 }
 
-func RunHttpTest(t *testing.T, f func(args *Arguments)) {
+type TestOptin struct {
+	Composer bool
+	Npm      bool
+	Git      bool
+}
+
+func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 
 	baseFolder := fmt.Sprintf("%s/pkgmirror/%s", os.TempDir(), RandStringBytesMaskImprSrc(10))
 
@@ -197,7 +204,7 @@ func RunHttpTest(t *testing.T, f func(args *Arguments)) {
 		Git: map[string]*pkgmirror.GitConfig{
 			"local": {
 				Server:  "local",
-				Enabled: true,
+				Enabled: optin.Git,
 				Icon:    "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png",
 				Clone:   "",
 			},
@@ -205,20 +212,27 @@ func RunHttpTest(t *testing.T, f func(args *Arguments)) {
 		Npm: map[string]*pkgmirror.NpmConfig{
 			"npm": {
 				Server:  ms.URL + "/npm",
-				Enabled: true,
+				Enabled: optin.Npm,
 				Icon:    "https://cldup.com/Rg6WLgqccB.svg",
+			},
+		},
+		Composer: map[string]*pkgmirror.ComposerConfig{
+			"comp": {
+				Server:  ms.URL + "/composer",
+				Enabled: optin.Composer,
+				Icon:    "https://getcomposer.org/img/logo-composer-transparent.png",
 			},
 		},
 	}
 
 	app, err := pkgmirror.GetApp(config, l)
+	assert.NoError(t, err)
+	assert.NotNil(t, app)
 
 	api.ConfigureApp(config, l)
 	git.ConfigureApp(config, l)
 	npm.ConfigureApp(config, l)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, app)
+	composer.ConfigureApp(config, l)
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		mux := app.Get("mux").(*goji.Mux)
@@ -241,9 +255,6 @@ func RunHttpTest(t *testing.T, f func(args *Arguments)) {
 			T:            t,
 			App:          app,
 		})
-
-		//ms.CloseClientConnections()
-		//ms.Close()
 
 		return nil
 	})
