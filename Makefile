@@ -6,6 +6,7 @@ GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
 GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm
+GO_PKG = ./,./mirror/composer,./mirror/git,./mirror/npm,./cli,./api
 GO_FILES = $(shell find $(GO_PROJECTS_PATHS) -maxdepth 1 -type f -name "*.go")
 JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 
@@ -23,6 +24,18 @@ format-backend:  ## Format code to respect CS
 	go fix $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
+
+coverage-backend: ## run coverage tests
+	mkdir -p build/coverage
+	rm -rf build/coverage/*.cov
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/main.cov ./
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/composer.cov ./mirror/composer
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/git.cov ./mirror/git
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/npm.cov ./mirror/npm
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/functional.cov ./test/mirror
+	gocovmerge build/coverage/* > build/pkgmirror.coverage
+	go tool cover -html=./build/pkgmirror.coverage -o build/pkgmirror.html
+
 test-backend:     ## Run backend tests
 	go test -v -race -timeout 60s $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
@@ -38,6 +51,8 @@ run: bin-dev      ## Run server
 install: install-backend install-frontend
 
 install-backend:  ## Install backend dependencies
+	go get github.com/wadey/gocovmerge
+	go get golang.org/x/tools/cmd/cover
 	go get github.com/aktau/github-release
 	go get golang.org/x/tools/cmd/goimports
 	go get -u github.com/jteeuwen/go-bindata/...

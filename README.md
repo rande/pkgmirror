@@ -1,6 +1,9 @@
 Pkg Mirrors
 ===========
 
+[![Build Status](https://travis-ci.org/rande/pkgmirror.svg?branch=master)](https://travis-ci.org/rande/pkgmirror)
+[![Coverage Status](https://coveralls.io/repos/github/rande/pkgmirror/badge.svg?branch=master)](https://coveralls.io/github/rande/pkgmirror?branch=master)
+
 This project aims to provides mirroring features for:
  - composer: the php package manager
  - git: clone mirror and sync repo repository
