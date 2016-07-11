@@ -447,6 +447,10 @@ func (ps *ComposerService) UpdatePackage(name string) error {
 		b := tx.Bucket(ps.Config.Code)
 		data := b.Get([]byte(pkg.Package))
 
+		if len(data) == 0 {
+			return pkgmirror.EmptyKeyError
+		}
+
 		if err := json.Unmarshal(data, pkg); err == nil {
 			return err
 		}

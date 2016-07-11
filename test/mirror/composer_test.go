@@ -63,3 +63,47 @@ func Test_Deprecated_Redirect(t *testing.T) {
 		assert.Equal(t, 200, res.StatusCode)
 	})
 }
+
+func Test_Update_Package(t *testing.T) {
+	optin := &test.TestOptin{Composer: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		time.Sleep(1 * time.Second)
+
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/packagist/p/symfony/framework-standard-edition$sha1.json?refresh=1", args.TestServer.URL))
+
+		assert.NoError(t, err)
+		assert.Equal(t, 200, res.StatusCode)
+
+		data := res.GetBody()
+
+		fmt.Println(string(data))
+
+		v := map[string]string{}
+		err = json.Unmarshal(data, &v)
+
+		assert.Equal(t, "OK", v["status"])
+		assert.Equal(t, "Package updated", v["message"])
+	})
+}
+
+func Test_Update_Unknown_Package(t *testing.T) {
+	optin := &test.TestOptin{Composer: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		time.Sleep(1 * time.Second)
+
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/packagist/p/foo/bar$sha1.json?refresh=1", args.TestServer.URL))
+
+		assert.NoError(t, err)
+		assert.Equal(t, 500, res.StatusCode)
+
+		data := res.GetBody()
+
+		v := map[string]string{}
+		err = json.Unmarshal(data, &v)
+
+		assert.Equal(t, "KO", v["status"])
+		assert.Equal(t, "No value available", v["message"])
+	})
+}
