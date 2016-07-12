@@ -33,7 +33,7 @@ const MirrorList = props => {
                     }
                 }
 
-                text += `' - ${events[mirror.Id].Message}`;
+                text += ` - ${events[mirror.Id].Message}`;
             }
 
             return (<ListItem

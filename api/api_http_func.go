@@ -63,7 +63,7 @@ the archive url to get source.
 			s.Usage = fmt.Sprintf(`
 You need to set the registry to:
 
-    npm registry set %s
+    npm set registry %s
 
 That's it! Now any packages will be retrieve from the mirror. Only downloaded archive files will
 be stored on a dedicated cache location.
