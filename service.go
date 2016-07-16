@@ -21,7 +21,7 @@ type MirrorService interface {
 }
 
 type State struct {
-   Id      string
-   Status  int
-   Message string
+	Id      string
+	Status  int
+	Message string
 }

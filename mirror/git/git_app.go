@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/AaronO/go-git-http"
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
 	"github.com/rande/gonode/core/vault"
@@ -67,6 +68,14 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 			ConfigureHttp(name, conf, app)
 		}
 
+		gitServer := githttp.New(config.DataDir)
+		// disable push, RO repository
+		gitServer.ReceivePack = false
+
+		mux := app.Get("mux").(*goji.Mux)
+		mux.Handle(pat.Get("/git/*"), gitServer)
+		mux.Handle(pat.Post("/git/*"), gitServer)
+
 		return nil
 	})
 
@@ -76,7 +85,6 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		}
 
 		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
-
 			return func(app *goapp.App, state *goapp.GoroutineState) error {
 				s := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(pkgmirror.MirrorService)
 				s.Serve(state)
@@ -84,6 +92,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				return nil
 			}
 		}(name))
+
 	}
 }
 
@@ -96,12 +105,6 @@ func ConfigureHttp(name string, conf *pkgmirror.GitConfig, app *goapp.App) {
 		w.Header().Set("Content-Type", "application/zip")
 		if err := gitService.WriteArchive(w, fmt.Sprintf("%s.git", pat.Param(ctx, "path")), pat.Param(ctx, "ref")); err != nil {
 			pkgmirror.SendWithHttpCode(w, 500, err.Error())
-		}
-	})
-
-	mux.HandleFuncC(pat.Get(fmt.Sprintf("/git/%s/*", conf.Server)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if err := gitService.WriteFile(w, r.URL.Path[6+len(conf.Server):]); err != nil {
-			w.WriteHeader(http.StatusNotFound)
 		}
 	})
 }

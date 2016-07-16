@@ -43,9 +43,6 @@ You can clone repository with the following command:
 
     git clone %s/path/repository.git
 
-Please note, the clone command use the dump http protocol witch is very slow. You should rely on
-the archive url to get source.
-
 `, s.TargetUrl, s.TargetUrl)
 
 			d = append(d, s)
