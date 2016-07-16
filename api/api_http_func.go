@@ -100,6 +100,34 @@ the github mirror is properly configured.
 			d = append(d, s)
 		}
 
+		for code, conf := range config.Bower {
+			s := &ServiceMirror{}
+			s.Id = fmt.Sprintf("pkgmirror.bower.%s", code)
+			s.Icon = conf.Icon
+			s.Type = "bower"
+			s.Name = code
+			s.SourceUrl = conf.Server
+			s.TargetUrl = fmt.Sprintf("%s/bower/%s", config.PublicServer, code)
+			s.Enabled = conf.Enabled
+			s.Usage = fmt.Sprintf(`
+You need to declare the mirror in your .bowerrc file:
+
+    {
+        "registry": {
+            "search": ["%s"],
+            "register": "%s"
+        }
+    }
+
+That's it!
+
+Please note, the bower mirror alter github path to point to the local git mirror. Make sure
+the github mirror is properly configured.
+`, s.TargetUrl, s.TargetUrl)
+
+			d = append(d, s)
+		}
+
 		pkgmirror.Serialize(w, d)
 	}
 }

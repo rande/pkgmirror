@@ -53,6 +53,7 @@ func Test_Repository_Rewrite_Git(t *testing.T) {
 		{"https://mirrors.localhost/git/bitbucket.org/foo/bar.git", "https://bitbucket.org/foo/bar"},
 		{"https://mirrors.localhost/git/github.com/xstudios/flames.git", "git://github.com/xstudios/flames.git"},
 		{"https://mirrors.localhost/git/git.kootstradevelopment.nl/r.kootstra/stackinstance-bundles-mailer-bundle.git", "http://git.kootstradevelopment.nl/r.kootstra/stackinstance-bundles-mailer-bundle.git"},
+		{"https://mirrors.localhost/git/github.com/zyncro/bower-videogular-themes-default.git", "https://github.com/zyncro/bower-videogular-themes-default.git"},
 	}
 
 	for _, v := range values {

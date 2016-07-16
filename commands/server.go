@@ -19,6 +19,7 @@ import (
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/api"
 	"github.com/rande/pkgmirror/assets"
+	"github.com/rande/pkgmirror/mirror/bower"
 	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/mirror/npm"
@@ -74,6 +75,7 @@ func (c *ServerCommand) Run(args []string) int {
 	composer.ConfigureApp(config, l)
 	git.ConfigureApp(config, l)
 	npm.ConfigureApp(config, l)
+	bower.ConfigureApp(config, l)
 	api.ConfigureApp(config, l)
 	assets.ConfigureApp(config, l)
 
