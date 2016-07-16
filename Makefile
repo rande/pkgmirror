@@ -65,7 +65,7 @@ install-frontend:  ## Install frontend dependencies
 	cd gui && npm install
 
 update:  ## Update dependencies
-	go get -u all
+	glide update
 
 bin-dev:                 ## Generate bin dev assets file
 	go-bindata -dev -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)

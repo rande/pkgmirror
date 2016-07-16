@@ -1,6 +1,8 @@
-hash: b206af5b881be1afd92981c2258689e938dc77ef5babd436225c17ac64301cc9
-updated: 2016-06-25T11:38:13.815486318Z
+hash: b26a2162de8527facf9a78e41fb9eaa731033bdbc30b844032c6ca4373c09b1a
+updated: 2016-07-17T01:20:20.792520086+02:00
 imports:
+- name: github.com/AaronO/go-git-http
+  version: 34209cf6cd947cfa52063bcb0f6d43cfa50c5566
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
@@ -40,14 +42,10 @@ imports:
   version: 2df174808ee097f90d259e432cc04442cf60be21
   subpackages:
   - spew
-- name: github.com/dustin/go-humanize
-  version: fef948f2d241bd1fd0631108ecc2c9553bae60bf
 - name: github.com/go-ini/ini
   version: 72ba3e6b9e6b87e0c74c9a7a4dc86e8dd8ba4355
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
-- name: github.com/jteeuwen/go-bindata
-  version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/mattn/go-isatty
   version: 56b76bdf51f7708750eac80fa38b952bb9f32639
 - name: github.com/mitchellh/cli
@@ -71,10 +69,8 @@ imports:
 - name: github.com/stretchr/testify
   version: f390dcf405f7b83c997eac1b06768bb9f44dec18
   subpackages:
-  - mock
   - assert
-- name: github.com/voxelbrain/goptions
-  version: 26cb8b04692384f4dc269de3b5fcf3e2ef78573e
+  - mock
 - name: goji.io
   version: e1741450ad80d2837134e32ac7b1d0a7a2b11c51
   subpackages:

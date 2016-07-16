@@ -161,32 +161,19 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 		}
 	}
 
-	cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/data/git/local/foo.git", baseFolder), " ")...)
+	if optin.Git {
+		cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/data/git/local/foo.git", baseFolder), " ")...)
 
-	if err := cmd.Start(); err != nil {
-		assert.NoError(t, err)
+		if err := cmd.Start(); err != nil {
+			assert.NoError(t, err)
 
-		return
-	}
-	if err := cmd.Wait(); err != nil {
-		assert.NoError(t, err)
+			return
+		}
+		if err := cmd.Wait(); err != nil {
+			assert.NoError(t, err)
 
-		return
-	}
-
-	cmd = exec.Command("git", "update-server-info")
-	cmd.Dir = fmt.Sprintf("%s/data/git/local/foo.git", baseFolder)
-
-	if err := cmd.Start(); err != nil {
-		assert.NoError(t, err)
-
-		return
-	}
-
-	if err := cmd.Wait(); err != nil {
-		assert.NoError(t, err)
-
-		return
+			return
+		}
 	}
 
 	l := goapp.NewLifecycle()

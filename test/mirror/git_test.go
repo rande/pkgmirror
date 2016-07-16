@@ -17,12 +17,9 @@ func Test_Git_Download_File(t *testing.T) {
 	optin := &test.TestOptin{Git: true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
-		res, _ := test.RunRequest("GET", fmt.Sprintf("%s/git/local/foo.git/HEAD", args.TestServer.URL))
+		res, _ := test.RunRequest("GET", fmt.Sprintf("%s/git/local/foo.git/info/refs?service=git-receive-pack", args.TestServer.URL))
 
 		assert.Equal(t, 200, res.StatusCode)
-		data := res.GetBody()
-
-		assert.Equal(t, []byte("ref: refs/heads/master\n"), data, "Unable to d/l HEAD file")
 	})
 }
 

@@ -161,25 +161,10 @@ func (gs *GitService) syncRepositories(service string) {
 			continue
 		}
 
-		cmd = exec.Command(gs.Config.Binary, "update-server-info")
-		cmd.Dir = path
-
-		if err := cmd.Start(); err != nil {
-			logger.WithError(err).Error("Error while starting the update-server-info command")
-
-			continue
-		}
-
-		if err := cmd.Wait(); err != nil {
-			logger.WithError(err).Error("Error while waiting the update-server-info command")
-
-			continue
-		}
-
 		gs.Logger.WithFields(log.Fields{
 			"path":   path,
 			"action": "SyncRepositories",
-		}).Debug("Complete the fetch and update-server-info commands")
+		}).Debug("Complete the fetch command")
 	}
 }
 
@@ -280,27 +265,6 @@ func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
 	}
 
 	logger.Info("Complete the archive command")
-
-	return nil
-}
-
-func (gs *GitService) WriteFile(w io.Writer, path string) error {
-	logger := gs.Logger.WithFields(log.Fields{
-		"path":   path,
-		"action": "WriteFile",
-	})
-
-	if f, err := os.Open(gs.dataFolder() + string(filepath.Separator) + path); err != nil {
-		logger.WithError(err).Error("Error while reading file from the fetch command")
-
-		return err
-	} else {
-		defer f.Close()
-
-		logger.Debug("Sending data to writer")
-
-		io.Copy(w, f)
-	}
 
 	return nil
 }

@@ -18,7 +18,7 @@ Entry Points
 
 ### Clone repository
 
-The current implementation provides support for the [dump http protocol](https://git-scm.com/book/tr/v2/Git-on-the-Server-The-Protocols), so
+The current implementation provides support for the [smart http protocol](https://git-scm.com/book/tr/v2/Git-on-the-Server-The-Protocols), so
  it is possible to only clone over http/https.
  
     git clone https://mirror.example.com/git/github.com/rande/pkgmirror.git
