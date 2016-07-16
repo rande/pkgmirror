@@ -13,4 +13,5 @@ var (
 	SyncInProgressError   = errors.New("A synchronization is already running")
 	EmptyKeyError         = errors.New("No value available")
 	ResourceNotFoundError = errors.New("Resource not found")
+	EmptyDataError        = errors.New("Empty data")
 )

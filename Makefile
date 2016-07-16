@@ -5,8 +5,8 @@ GO_BINDATA_PATHS = $(shell pwd)/gui/build
 GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
-GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./test/tools ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm
-GO_PKG = ./,./mirror/composer,./mirror/git,./mirror/npm,./api
+GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./test/tools ./test/api ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm ./mirror/bower ./commands
+GO_PKG = ./,./mirror/composer,./mirror/git,./mirror/npm,./mirror/bower,./api
 GO_FILES = $(shell find $(GO_PROJECTS_PATHS) -maxdepth 1 -type f -name "*.go")
 JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 
@@ -31,7 +31,10 @@ coverage-backend: ## run coverage tests
 	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/composer.cov ./mirror/composer
 	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/git.cov ./mirror/git
 	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/npm.cov ./mirror/npm
-	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/functional.cov ./test/mirror
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/npm.cov ./mirror/bower
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/functional_mirror.cov ./test/mirror
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/functional_api.cov ./test/api
+	go test -v -timeout 60s -coverpkg $(GO_PKG) -covermode count -coverprofile=build/coverage/functional_tools.cov ./test/tools
 	gocovmerge build/coverage/* > build/pkgmirror.coverage
 	go tool cover -html=./build/pkgmirror.coverage -o build/pkgmirror.html
 

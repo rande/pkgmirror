@@ -1,0 +1,14 @@
+[
+    {
+        "name": "10digit-geo",
+        "url": "https://github.com/10digit/geo.git"
+    },
+    {
+        "name": "10digit-invoices",
+        "url": "https://github.com/10digit/invoices.git"
+    },
+    {
+        "name": "10digit-legal",
+        "url": "https://github.com/10digit/legal.git"
+    }
+]

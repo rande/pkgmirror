@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package mirror
+package api
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 )
 
 func Test_Api_Ping(t *testing.T) {
-	optin := &test.TestOptin{true, true, true}
+	optin := &test.TestOptin{}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
 		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/ping", args.TestServer.URL))
@@ -29,7 +29,7 @@ func Test_Api_Ping(t *testing.T) {
 }
 
 func Test_Api_List(t *testing.T) {
-	optin := &test.TestOptin{true, true, true}
+	optin := &test.TestOptin{true, true, true, true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
 		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/mirrors", args.TestServer.URL))
@@ -44,6 +44,6 @@ func Test_Api_List(t *testing.T) {
 		err = json.Unmarshal(data, &mirrors)
 		assert.NoError(t, err)
 
-		assert.Equal(t, 3, len(mirrors))
+		assert.Equal(t, 4, len(mirrors))
 	})
 }

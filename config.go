@@ -11,6 +11,12 @@ type ComposerConfig struct {
 	Icon    string
 }
 
+type BowerConfig struct {
+	Server  string
+	Enabled bool
+	Icon    string
+}
+
 type NpmConfig struct {
 	Server    string
 	Enabled   bool
@@ -37,4 +43,5 @@ type Config struct {
 	Composer       map[string]*ComposerConfig
 	Npm            map[string]*NpmConfig
 	Git            map[string]*GitConfig
+	Bower          map[string]*BowerConfig
 }

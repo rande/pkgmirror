@@ -24,6 +24,7 @@ import (
 	"github.com/rande/goapp"
 	"github.com/rande/pkgmirror"
 	"github.com/rande/pkgmirror/api"
+	"github.com/rande/pkgmirror/mirror/bower"
 	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/mirror/npm"
@@ -138,27 +139,26 @@ type TestOptin struct {
 	Composer bool
 	Npm      bool
 	Git      bool
+	Bower    bool
 }
 
 func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 
 	baseFolder := fmt.Sprintf("%s/pkgmirror/%s", os.TempDir(), RandStringBytesMaskImprSrc(10))
 
-	if err := os.MkdirAll(fmt.Sprintf("%s/data/npm", baseFolder), 0755); err != nil {
-		assert.NoError(t, err)
-		return
+	folders := []string{
+		"%s/data/npm",
+		"%s/data/composer",
+		"%s/data/bower",
+		"%s/data/git",
+		"%s/cache/git",
 	}
-	if err := os.MkdirAll(fmt.Sprintf("%s/data/composer", baseFolder), 0755); err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if err := os.MkdirAll(fmt.Sprintf("%s/data/git", baseFolder), 0755); err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if err := os.MkdirAll(fmt.Sprintf("%s/cache/git", baseFolder), 0755); err != nil {
-		assert.NoError(t, err)
-		return
+
+	for _, f := range folders {
+		if err := os.MkdirAll(fmt.Sprintf(f, baseFolder), 0755); err != nil {
+			assert.NoError(t, err)
+			return
+		}
 	}
 
 	cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/data/git/local/foo.git", baseFolder), " ")...)
@@ -223,6 +223,13 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 				Icon:    "https://getcomposer.org/img/logo-composer-transparent.png",
 			},
 		},
+		Bower: map[string]*pkgmirror.BowerConfig{
+			"bower": {
+				Server:  ms.URL + "/bower",
+				Enabled: optin.Bower,
+				Icon:    "https://bower.io/img/bower-logo.svg",
+			},
+		},
 	}
 
 	app, err := pkgmirror.GetApp(config, l)
@@ -233,6 +240,7 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 	git.ConfigureApp(config, l)
 	npm.ConfigureApp(config, l)
 	composer.ConfigureApp(config, l)
+	bower.ConfigureApp(config, l)
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		mux := app.Get("mux").(*goji.Mux)

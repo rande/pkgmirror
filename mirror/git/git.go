@@ -322,7 +322,6 @@ func GitRewriteArchive(publicServer, path string) string {
 }
 
 func GitRewriteRepository(publicServer, path string) string {
-
 	if results := SVN_REPOSITORY.FindStringSubmatch(path); len(results) > 1 {
 		return path // svn not supported
 	}

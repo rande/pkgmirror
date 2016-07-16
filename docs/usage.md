@@ -18,6 +18,7 @@ To add a new repository, for instance, the official one:
         [Composer.packagist]
         Server = "https://packagist.org"
         Enabled = true
+        Icon = "https://getcomposer.org/img/logo-composer-transparent.png"
 
 Next, you need to declare the mirror in your ``composer.json`` file:
 
@@ -43,10 +44,11 @@ To add new repository, for instance, https://registry.npmjs.org
         [Npm.npm]
         Server = "https://registry.npmjs.org"
         Enabled = true
+        Icon = "https://cldup.com/Rg6WLgqccB.svg"
             
 Next, you need to declare the registry in npm
 
-        npm registry set https://localhost/npm/npm
+        npm set registry https://localhost/npm/npm
 
 Git
 ---
@@ -58,11 +60,13 @@ To add new servers:
         Server = "github.com"
         Clone = "git@gitbub.com:{path}"
         Enabled = true
+        Icon = "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png"
     
         [Git.drupal]
         Server = "drupal.org"
         Clone = "https://git.drupal.org/{path}"
         Enabled = true
+        Icon = "https://www.drupal.org/files/druplicon-small.png"
 
 
 You need to manually add git repository:
@@ -71,3 +75,24 @@ You need to manually add git repository:
  2. Clone a repository
         
         git clone --mirror git@github.com:rande/gonode.git ./data/git/github.com/rande/gonode.git
+        
+        
+Bower
+-----
+
+To add a new repository, for instance, https://bower.herokuapp.com:
+
+    [Bower]
+        [Bower.bower]
+        Server = "https://bower.herokuapp.com"
+        Enabled = true
+        Icon = "https://bower.io/img/bower-logo.svg"
+        
+You need to declare the mirror in your .bowerrc file:
+
+    {
+        "registry": {
+            "search": ["https://localhost/bower/bower"],
+            "register": "https://localhost/bower/bower"
+        }
+    }
