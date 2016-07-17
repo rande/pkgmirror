@@ -1,21 +1,33 @@
 language: go
 go: [1.6]
 sudo: false
-
 cache:
-  directories:
-    - gui/node_modules
-    - vendor
-
+    directories:
+        - gui/node_modules
+        - vendor
 install:
-  # from http://austinpray.com/ops/2015/09/20/change-travis-node-version.html
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 4.4.5
-  - make install
+    # from http://austinpray.com/ops/2015/09/20/change-travis-node-version.html
+    - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 4.4.5
+    - make install
 
 script:
-  - go get github.com/mattn/goveralls
-  - make coverage-backend
-  - goveralls -coverprofile=build/pkgmirror.coverage -service=travis-ci
-  - make test-frontend
-  - if [[ "$TRAVIS_BRANCH" = "master" && "$GITHUB_TOKEN" != "" ]]; then make release; fi;
-  - if [ "$TRAVIS_BRANCH" != "master" ]; then make build; fi;
+    - go get github.com/mattn/goveralls
+    - make coverage-backend
+    - goveralls -coverprofile=build/pkgmirror.coverage -service=travis-ci
+    - make test-frontend
+    - make build
+
+deploy:
+    provider: releases
+    api_key:
+        secure: YagkCJpfl11W6Tog6uKXZbuXeTRF+CaC9G775oGbc7m3fRPHGNbYrclywZVVO1py5f6GhdYMdy6T3yNKwPOixpxTPyVZCsAXJdeCESi32+/3W1WHguGK8jVXcTJuvEI8oDEyI5vO2oqjvSAOo35p/dTj2E+obns7dTyJ/3d3Ac5akXkMyRdlfLaL8tEdSFY9oZupL9t3jqEmLohNctG+mlr3FzaFpWQX8tG6f0wNXnKGoeMgBNObscT5uKgpdUkpLJquJ058ez8o+cWT2F8THYs5YIEsLXrmp6ng2+Gp3NZf75ZPl8qlfRNT6EwumsB7mDawpmDFxAl9DzxQIDL+clUjwKpy9qUDBc0ONIY0oSlUtcohOTDa8zX8J0ZjhPfnbsZH3wEsZID2CC47QElCMZ71l4OdNgr2Rgci67OdZzbmOn6ic+0e+VN/ieCeZZAMUI1kWeYS+3sV5rD9+LX8Pbl/BA1GlTuMI46WIwMNEQfWl31nasB/3UxYjrhPhfd9c5tpzILB35MLeV6ZxvogKXDaHnZVULvIL80ezUWbg+WGqNUdzEiF+Bv8V5P/hRfgXuxCE0DA/+6iH0lfYhyO38oJtub8xN6G8OQ9U+Sjy25Sm8vtLvIcC3O9rcpT3Kp2AIoV678AXqV6ixg3Z5mp7rQOdCgKU6vJuvOFmFf/zO0=
+    file:
+        - build/darwin/amd64/pkgmirror
+        - build/linux/amd64/pkgmirror
+        - build/linux/386/pkgmirror
+        - build/linux/arm/pkgmirror
+        - build/linux/arm64/pkgmirror
+    skip_cleanup: true
+    overwrite: true
+    on:
+        tags: true

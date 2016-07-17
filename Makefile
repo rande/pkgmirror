@@ -87,12 +87,3 @@ build: bin ## build binaries
 	GOOS=linux  GOARCH=386   go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/linux/386/pkgmirror    cli/main.go
 	GOOS=linux  GOARCH=arm   go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/linux/arm/pkgmirror    cli/main.go
 	GOOS=linux  GOARCH=arm64 go build -ldflags "-X main.RefLog=$(SHA1) -s -w" -o build/linux/arm64/pkgmirror  cli/main.go
-
-release: build ## build and release binaries on github
-	github-release delete  --tag master --user rande --repo pkgmirror|| exit 0
-	github-release release --tag master --user rande --repo pkgmirror --name "Beta release" --pre-release
-	github-release upload  --tag master --user rande --repo pkgmirror --name "pkgmirror-osx-amd64"   --file build/darwin/amd64/pkgmirror
-	github-release upload  --tag master --user rande --repo pkgmirror --name "pkgmirror-linux-amd64" --file build/linux/amd64/pkgmirror
-	github-release upload  --tag master --user rande --repo pkgmirror --name "pkgmirror-linux-386"   --file build/linux/386/pkgmirror
-	github-release upload  --tag master --user rande --repo pkgmirror --name "pkgmirror-linux-arm"   --file build/linux/arm/pkgmirror
-	github-release upload  --tag master --user rande --repo pkgmirror --name "pkgmirror-linux-arm64" --file build/linux/arm64/pkgmirror
