@@ -7,19 +7,61 @@ package mirror
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"testing"
 
+	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/test"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Git_Download_File(t *testing.T) {
+func Test_Git_Clone_Existing_Repo(t *testing.T) {
 	optin := &test.TestOptin{Git: true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
-		res, _ := test.RunRequest("GET", fmt.Sprintf("%s/git/local/foo.git/info/refs?service=git-receive-pack", args.TestServer.URL))
+		assert.NoError(t, os.RemoveAll("/tmp/pkgmirror/foo"))
 
-		assert.Equal(t, 200, res.StatusCode)
+		gitService := args.App.Get("pkgmirror.git.local").(*git.GitService)
+
+		url := fmt.Sprintf("%s/git/local/foo.git", args.TestServer.URL)
+
+		cmd := exec.Command(gitService.Config.Binary, "clone", url, "/tmp/pkgmirror/foo")
+
+		assert.NoError(t, cmd.Start())
+		assert.NoError(t, cmd.Wait())
+	})
+}
+
+func Test_Git_Clone_Non_Existing_Repo(t *testing.T) {
+	optin := &test.TestOptin{Git: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		assert.NoError(t, os.RemoveAll("/tmp/pkgmirror/foo"))
+
+		gitService := args.App.Get("pkgmirror.git.local").(*git.GitService)
+
+		assert.False(t, gitService.Has("foobar.git"))
+		url := fmt.Sprintf("%s/git/local/foobar.git", args.TestServer.URL)
+
+		cmd := exec.Command(gitService.Config.Binary, "clone", url, "/tmp/pkgmirror/foo")
+
+		assert.NoError(t, cmd.Start())
+		assert.NoError(t, cmd.Wait())
+
+		assert.True(t, gitService.Has("foobar.git"))
+	})
+}
+
+func Test_Git_Has(t *testing.T) {
+	optin := &test.TestOptin{Git: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		assert.NoError(t, os.RemoveAll("/tmp/pkgmirror/foo"))
+
+		gitService := args.App.Get("pkgmirror.git.local").(*git.GitService)
+
+		assert.True(t, gitService.Has("foo.git"))
 	})
 }
 

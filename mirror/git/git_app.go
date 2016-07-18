@@ -8,6 +8,7 @@ package git
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/AaronO/go-git-http"
 	log "github.com/Sirupsen/logrus"
@@ -43,6 +44,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 					s.Config.Server = conf.Server
 					s.Config.PublicServer = config.PublicServer
 					s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
+					s.Config.Clone = conf.Clone
 					s.Vault = vault
 					s.Logger = logger.WithFields(log.Fields{
 						"handler": "git",
@@ -68,13 +70,70 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 			ConfigureHttp(name, conf, app)
 		}
 
-		gitServer := githttp.New(config.DataDir)
-		// disable push, RO repository
-		gitServer.ReceivePack = false
+		logger := app.Get("logger").(*log.Logger)
 
 		mux := app.Get("mux").(*goji.Mux)
-		mux.Handle(pat.Get("/git/*"), gitServer)
-		mux.Handle(pat.Post("/git/*"), gitServer)
+
+		// disable push, RO repository
+		gitServer := githttp.New(config.DataDir)
+		gitServer.ReceivePack = false
+		gitServer.EventHandler = func(ev githttp.Event) {
+			entry := logger.WithFields(log.Fields{
+				"commit": ev.Commit,
+				"type":   ev.Type.String(),
+				"dir":    ev.Dir,
+			})
+
+			if ev.Error != nil {
+				entry.WithError(ev.Error).Info("Git server error")
+			} else {
+				entry.Debug("Git command received")
+			}
+		}
+
+		preAction := func(fn http.Handler) func(w http.ResponseWriter, r *http.Request) {
+			return func(w http.ResponseWriter, r *http.Request) {
+
+				for name := range config.Git {
+					path := "/git/" + name
+
+					if len(r.URL.Path) > len(path) && path == r.URL.Path[0:len(path)] {
+
+						//found match
+						s := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(*GitService)
+
+						if len(s.Config.Clone) == 0 {
+							break // not configured, so skip clone
+						}
+
+						reg := regexp.MustCompile(fmt.Sprintf(`/git/%s/((.*)\.git)(|.*)`, name))
+
+						path := ""
+						if results := reg.FindStringSubmatch(r.URL.Path); len(results) > 0 {
+							path = results[1]
+						} else {
+							break // not valid
+						}
+
+						if s.Has(path) { // repository exists, nothing to do
+							break
+						}
+
+						// not available, clone the repository
+						if err := s.Clone(path); err != nil {
+							logger.WithError(err).Error("Unable to clone the repository")
+						}
+
+						break
+					}
+				}
+
+				fn.ServeHTTP(w, r)
+			}
+		}
+
+		mux.HandleFunc(pat.Get("/git/*"), preAction(gitServer))
+		mux.HandleFunc(pat.Post("/git/*"), preAction(gitServer))
 
 		return nil
 	})
@@ -92,14 +151,13 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 				return nil
 			}
 		}(name))
-
 	}
 }
 
 func ConfigureHttp(name string, conf *pkgmirror.GitConfig, app *goapp.App) {
-	mux := app.Get("mux").(*goji.Mux)
-
 	gitService := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(*GitService)
+
+	mux := app.Get("mux").(*goji.Mux)
 
 	mux.HandleFuncC(NewGitPat(conf.Server), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/zip")
