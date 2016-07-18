@@ -23,11 +23,11 @@ deploy:
     api_key:
         secure: Qt4feiiX/1peF3107Z+HKHyXEri6oLdEENGLMAW7xyukKc6EhAwqsI5xKaJbAKfM7tyrvNyZaBil/2TW6bEmG7llnVvdoyzaUO3AZ6z/tpsQ8SJoI1ue5jvXvyK9LAzgVn2aKZHIgw6DcBF2mkkelAcNRIc92yGHyZnMOm0R5Fbc2iNakgwrHmHiTsrIgvGvURzWVtqV0LiWuMBeiqoek3j/BHtgl9ZzbBVWpvYsks6+BGS91x64ETiXaTPCIHHMvbP9r3Ps6ePqQbthqwLRsdLm9D0QS4bm0XD9faXYViue/a5mROxzzLgB9nwNTajvdAWN6mIGJw1aRI3GMZo4nzxk3CHHai+ybLHGVXPkDqE+o5dJMaoQ2TVoqLmRF6ddfyqhqs89aQ3g/6e5L5vtalm1eOEtK+s10e5+5x007syIz9R0ZE0UpdusuE8T9uhAdSmuALu/bW8K734eKhSRN1+sXdCinZaQ/BBWTn2rClnLfagR1xTwisdUJpZeZkcOZWZPx3D9zBU5L7TZGVTofm+3LeLXc24VoC7tY8GjhWP1smVvpzayyAu5//hSZFk+xHgv1ja1A5MeFcQQKi37FE7qTPpruWMK2UdVa6YbCGMYg5wANMK1Wj8/Df/KWM8x/qabAgeJcgA8dRKP8F1Ku2YGuTdVczyeuPaUv8+Csms=
     file:
-        - build/darwin/amd64/pkgmirror
-        - build/linux/amd64/pkgmirror
-        - build/linux/386/pkgmirror
-        - build/linux/arm/pkgmirror
-        - build/linux/arm64/pkgmirror
+        - build/darwin-amd64-pkgmirror
+        - build/linux-amd64-pkgmirror
+        - build/linux-386-pkgmirror
+        - build/linux-arm-pkgmirror
+        - build/linux-arm64-pkgmirror
     skip_cleanup: true
     overwrite: true
     on:
