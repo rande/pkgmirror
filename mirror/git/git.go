@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/rande/goapp"
@@ -135,12 +137,12 @@ func (gs *GitService) syncRepositories(service string) {
 
 	for _, path := range paths {
 		logger := gs.Logger.WithFields(log.Fields{
-			"path":   path[len(service)+1:],
+			"path":   path[len(service):],
 			"action": "SyncRepositories",
 		})
 
 		gs.StateChan <- pkgmirror.State{
-			Message: fmt.Sprintf("Fetch %s", path[len(service)+1:]),
+			Message: fmt.Sprintf("Fetch %s", path[len(service):]),
 			Status:  pkgmirror.STATUS_RUNNING,
 		}
 
@@ -265,6 +267,61 @@ func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
 	}
 
 	logger.Info("Complete the archive command")
+
+	return nil
+}
+
+func (gs *GitService) Has(path string) bool {
+	gitPath := gs.dataFolder() + string(filepath.Separator) + path
+
+	has := true
+	if _, err := os.Stat(gitPath); os.IsNotExist(err) {
+		has = false
+	}
+
+	gs.Logger.WithFields(log.Fields{
+		"path":   gitPath,
+		"action": "Has",
+		"has":    has,
+	}).Debug("Has repository?")
+
+	return has
+}
+
+func (gs *GitService) Clone(path string) error {
+	gitPath := gs.dataFolder() + string(filepath.Separator) + path
+	remote := strings.Replace(gs.Config.Clone, "{path}", path, -1)
+
+	fmt.Println("Clone:", gs.Config.Clone, "Remote:", remote, "Path:", path)
+
+	if gs.Config.Clone == remote {
+		// same key, no replacement
+		return pkgmirror.SameKeyError
+	}
+
+	logger := gs.Logger.WithFields(log.Fields{
+		"path":   path,
+		"action": "Clone",
+		"remote": remote,
+	})
+
+	logger.Info("Starting cloning remote repository")
+
+	cmd := exec.Command(gs.Config.Binary, "clone", "--mirror", remote, gitPath)
+
+	logger.WithField("cmd", cmd.Args).Debug("Run command")
+
+	if err := cmd.Start(); err != nil {
+		logger.WithError(err).Error("Error while starting to clone the remote repository")
+
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		logger.WithError(err).Error("Error while cloning the remote repository")
+
+		return err
+	}
 
 	return nil
 }

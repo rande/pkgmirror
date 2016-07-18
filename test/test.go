@@ -162,17 +162,25 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 	}
 
 	if optin.Git {
-		cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/data/git/local/foo.git", baseFolder), " ")...)
 
-		if err := cmd.Start(); err != nil {
-			assert.NoError(t, err)
-
-			return
+		targets := []string{
+			"data/git/local/foo.git",     // use as already available repository
+			"data/git/source/foobar.git", // use as a source for cloning missing repository
 		}
-		if err := cmd.Wait(); err != nil {
-			assert.NoError(t, err)
+		for _, target := range targets {
+			cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/%s", baseFolder, target), " ")...)
 
-			return
+			if err := cmd.Start(); err != nil {
+				assert.NoError(t, err)
+
+				return
+			}
+
+			if err := cmd.Wait(); err != nil {
+				assert.NoError(t, err)
+
+				return
+			}
 		}
 	}
 
@@ -193,7 +201,7 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 				Server:  "local",
 				Enabled: optin.Git,
 				Icon:    "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png",
-				Clone:   "",
+				Clone:   fmt.Sprintf("file://%s/data/git/source/{path}", baseFolder),
 			},
 		},
 		Npm: map[string]*pkgmirror.NpmConfig{

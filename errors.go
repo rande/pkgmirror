@@ -14,4 +14,5 @@ var (
 	EmptyKeyError         = errors.New("No value available")
 	ResourceNotFoundError = errors.New("Resource not found")
 	EmptyDataError        = errors.New("Empty data")
+	SameKeyError          = errors.New("Same key")
 )

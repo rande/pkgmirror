@@ -69,7 +69,7 @@ To add new servers:
         Icon = "https://www.drupal.org/files/druplicon-small.png"
 
 
-You need to manually add git repository:
+If the ``Clone`` settings is not set, you need to manually add git repository:
 
  1. Connect to the server
  2. Clone a repository
