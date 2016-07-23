@@ -7,6 +7,7 @@ package api
 
 import (
 	"encoding/json"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
@@ -49,13 +50,17 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 
 		states := map[string]pkgmirror.State{}
 
+		l := sync.Mutex{}
+
 		// send the current state
 		brk.OnConnect(func() {
+			l.Lock()
 			for _, s := range states {
 				data, _ := json.Marshal(&s)
 
 				brk.Notifier <- data
 			}
+			l.Unlock()
 		})
 
 		for {
@@ -67,7 +72,9 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 					"status":  s.Status,
 				}).Debug("Receive message")
 
+				l.Lock()
 				states[s.Id] = s
+				l.Unlock()
 
 				data, _ := json.Marshal(&s)
 
