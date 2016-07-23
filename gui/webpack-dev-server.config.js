@@ -8,6 +8,7 @@ const WriteFilePlugin       = require('write-file-webpack-plugin');
 const config = {
     // Entry points to the project
     entry:     [
+        'whatwg-fetch',
         'webpack/hot/dev-server',
         'webpack/hot/only-dev-server',
         path.join(__dirname, '/src/app.js'),

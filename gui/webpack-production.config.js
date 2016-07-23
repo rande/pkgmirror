@@ -5,7 +5,7 @@ const nodeModulesPath       = path.resolve(__dirname, 'node_modules');
 const TransferWebpackPlugin = require('transfer-webpack-plugin');
 
 const config = {
-    entry:   [path.join(__dirname, '/src/app.js')],
+    entry:   ['whatwg-fetch', path.join(__dirname, '/src/app.js')],
     // Render source-map file for final build
     // devtool: 'source-map',
     // output config

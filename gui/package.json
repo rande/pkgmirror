@@ -35,6 +35,7 @@
     "webpack": "^1.12.9",
     "webpack-dev-server": "^1.14.0",
     "write-file-webpack-plugin": "^3.1.8",
-    "json-loader": "^0.5.4"
+    "json-loader": "^0.5.4",
+    "whatwg-fetch": "^1.0.0"
   }
 }
