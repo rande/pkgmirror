@@ -7,6 +7,8 @@ import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
+import {SMALL, MEDIUM, LARGE} from 'material-ui/utils/withWidth';
+import spacing from 'material-ui/styles/spacing';
 
 import { connect } from 'react-redux';
 import { MirrorList, MenuList, CardMirror } from './redux/containers';
@@ -25,32 +27,50 @@ Container.propTypes = {
     children: React.PropTypes.any,
 };
 
-const Main = props => (<MuiThemeProvider muiTheme={props.Theme}>
-    <div>
-        <AppBar
-            title={props.Title}
-            iconClassNameRight="muidocs-icon-navigation-expand-more"
-            onLeftIconButtonTouchTap={props.toggleDrawer}
-        />
+const Main = props => {
 
-        <Drawer open={props.DrawerOpen}>
+    let DrawerOpen = false;
+    let marginLeft = 0;
+    if (props.width == SMALL && props.DrawerOpen) {
+        DrawerOpen = true;
+    }
+
+    if (props.width != SMALL) {
+        DrawerOpen = true;
+        marginLeft = 300;
+    }
+
+    return <MuiThemeProvider muiTheme={props.Theme}>
+        <div>
             <AppBar
                 title={props.Title}
+                iconClassNameRight="muidocs-icon-navigation-expand-more"
                 onLeftIconButtonTouchTap={props.toggleDrawer}
+                showMenuIconButton={props.width == SMALL}
             />
-            <List>
-                <MenuList />
-            </List>
-        </Drawer>
 
-        <Router history={props.history}>
-            <Route path="/" component={Container}>
-                <IndexRoute component={MirrorList} />
-                <Route path="mirror/:id" component={CardMirror} />
-            </Route>
-        </Router>
-    </div>
-</MuiThemeProvider>);
+            <Drawer open={DrawerOpen} docked={true} width={300}>
+                <AppBar
+                    title={props.Title}
+                    onLeftIconButtonTouchTap={props.toggleDrawer}
+                    showMenuIconButton={props.width == SMALL}
+                />
+                <List>
+                    <MenuList />
+                </List>
+            </Drawer>
+
+            <div className="foobar" style={{marginLeft: marginLeft + 'px'}}>
+                <Router history={props.history} >
+                    <Route path="/" component={Container}>
+                        <IndexRoute component={MirrorList} />
+                        <Route path="mirror/:id" component={CardMirror} />
+                    </Route>
+                </Router>
+            </div>
+        </div>
+    </MuiThemeProvider>
+};
 
 Main.propTypes = {
     Theme: React.PropTypes.object,
@@ -59,6 +79,7 @@ Main.propTypes = {
     toggleDrawer: React.PropTypes.func,
     history: React.PropTypes.object,
     homepage: React.PropTypes.func,
+    width: React.PropTypes.number.isRequired,
 };
 
 const mapStateToProps = (state) => ({ ...state.guiApp });

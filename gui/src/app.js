@@ -15,7 +15,7 @@ import { hashHistory } from 'react-router';
 
 import Main from './Main'; // Our custom react component
 import { mirrorApp, addList, updateState } from './redux/apps/mirrorApp';
-import { guiApp } from './redux/apps/guiApp';
+import { guiApp, resizeApp } from './redux/apps/guiApp';
 
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
@@ -28,8 +28,20 @@ const reducers = combineReducers({
     routing: routerReducer,
 });
 
-
 let store = createStore(reducers, applyMiddleware(middleware));
+
+if (window) {
+    var deferTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(deferTimer);
+        deferTimer = setTimeout(() => {
+            store.dispatch(resizeApp(window.innerWidth));
+        }, 200);
+    });
+
+    // init the state
+    store.dispatch(resizeApp(window.innerWidth));
+}
 
 const history = syncHistoryWithStore(hashHistory, store);
 // history.listen(location => {
