@@ -8,10 +8,9 @@ package api
 import (
 	"fmt"
 	"testing"
+	//"encoding/json"
 
-	"encoding/json"
-
-	"github.com/rande/pkgmirror/api"
+	//"github.com/rande/pkgmirror/api"
 	"github.com/rande/pkgmirror/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,22 +27,22 @@ func Test_Api_Ping(t *testing.T) {
 	})
 }
 
-func Test_Api_List(t *testing.T) {
-	optin := &test.TestOptin{true, true, true, true}
-
-	test.RunHttpTest(t, optin, func(args *test.Arguments) {
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/mirrors", args.TestServer.URL))
-
-		assert.NoError(t, err)
-		assert.Equal(t, 200, res.StatusCode)
-
-		mirrors := []*api.ServiceMirror{}
-
-		data := res.GetBody()
-
-		err = json.Unmarshal(data, &mirrors)
-		assert.NoError(t, err)
-
-		assert.Equal(t, 4, len(mirrors))
-	})
-}
+//func Test_Api_List(t *testing.T) {
+//	optin := &test.TestOptin{true, true, true, true}
+//
+//	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+//		res, err := test.RunRequest("GET", fmt.Sprintf("%s/api/mirrors", args.TestServer.URL))
+//
+//		assert.NoError(t, err)
+//		assert.Equal(t, 200, res.StatusCode)
+//
+//		mirrors := []*api.ServiceMirror{}
+//
+//		data := res.GetBody()
+//
+//		err = json.Unmarshal(data, &mirrors)
+//		assert.NoError(t, err)
+//
+//		assert.Equal(t, 4, len(mirrors))
+//	})
+//}

@@ -5,9 +5,11 @@
 
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import { deepOrange500 } from 'material-ui/styles/colors';
+import {SMALL, MEDIUM, LARGE} from 'material-ui/utils/withWidth'
 
 export const GUI_TOGGLE_DRAWER = 'GUI_TOGGLE_DRAWER';
 export const GUI_HIDE_DRAWER = 'GUI_HIDE_DRAWER';
+export const GUI_RESIZE_WINDOW = 'GUI_RESIZE_WINDOW';
 
 export const toggleDrawer = () => ({
     type: GUI_TOGGLE_DRAWER,
@@ -15,6 +17,10 @@ export const toggleDrawer = () => ({
 
 export const hideDrawer = () => ({
     type: GUI_HIDE_DRAWER,
+});
+
+export const resizeApp = innerWidth => ({
+    type: GUI_RESIZE_WINDOW, innerWidth
 });
 
 const defaultState = {
@@ -25,6 +31,7 @@ const defaultState = {
             accent1Color: deepOrange500,
         },
     }),
+    width: SMALL
 };
 
 export function guiApp(state = defaultState, action) {
@@ -35,6 +42,22 @@ export function guiApp(state = defaultState, action) {
     case GUI_HIDE_DRAWER:
         return { ...state, DrawerOpen: false };
 
+    case GUI_RESIZE_WINDOW:
+        const
+             largeWidth = 992,
+             mediumWidth = 768;
+
+        let width;
+
+        if (action.innerWidth >= largeWidth) {
+            width = LARGE;
+        } else if (action.innerWidth >= mediumWidth) {
+            width = MEDIUM;
+        } else { // innerWidth < 768
+            width = SMALL;
+        }
+
+        return { ...state, width};
     default:
         return state;
     }

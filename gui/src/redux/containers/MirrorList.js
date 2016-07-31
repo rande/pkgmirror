@@ -12,6 +12,7 @@ import { hideDrawer } from '../apps/guiApp';
 const mapStateToProps = (state) => ({
     mirrors: state.mirrorApp.mirrors,
     events: state.mirrorApp.events,
+    width: state.guiApp.width,
 });
 
 const mapDispatchToProps = (dispatch) => ({
