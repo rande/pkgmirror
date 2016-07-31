@@ -55,9 +55,8 @@ const Main = props => {
                     onLeftIconButtonTouchTap={props.toggleDrawer}
                     showMenuIconButton={props.width == SMALL}
                 />
-                <List>
-                    <MenuList />
-                </List>
+
+                <MenuList />
             </Drawer>
 
             <div className="foobar" style={{marginLeft: marginLeft + 'px'}}>
