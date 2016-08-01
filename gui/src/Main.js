@@ -8,13 +8,12 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
 import {SMALL, MEDIUM, LARGE} from 'material-ui/utils/withWidth';
-import spacing from 'material-ui/styles/spacing';
 
 import { connect } from 'react-redux';
 import { MirrorList, MenuList, CardMirror } from './redux/containers';
-import { List } from 'material-ui/List';
 
 import { toggleDrawer, hideDrawer } from './redux/apps/guiApp';
+import About from './components/About';
 
 import { Router, Route, IndexRoute } from 'react-router';
 import { push } from 'react-router-redux';
@@ -64,6 +63,7 @@ const Main = props => {
                     <Route path="/" component={Container}>
                         <IndexRoute component={MirrorList} />
                         <Route path="mirror/:id" component={CardMirror} />
+                        <Route path="about" component={About} />
                     </Route>
                 </Router>
             </div>

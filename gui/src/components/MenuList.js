@@ -6,6 +6,8 @@
 import React from 'react';
 import Avatar from 'material-ui/Avatar';
 import { List, ListItem } from 'material-ui/List';
+import Dashboard from 'material-ui/svg-icons/action/dashboard'
+import Info from 'material-ui/svg-icons/action/info'
 
 const MenuList = props => {
     const mirrorsItems = props.mirrors.map((mirror, pos) => (<ListItem
@@ -16,11 +18,23 @@ const MenuList = props => {
         insetChildren={false}
     />));
 
-    const items = [<ListItem
-            key="status"
-            primaryText="Status"
+    const items = [
+        <ListItem
+            key="dashboard"
+            primaryText="Dashboard"
+            leftIcon={<Dashboard viewBox="0 5 24 24" style={{width: 40, height: 40}}/>}
             onTouchTap={() => { props.homepage(); }}
-        />, ...mirrorsItems];
+        />,
+
+        ...mirrorsItems,
+
+        <ListItem
+            key="about"
+            primaryText="About"
+            leftIcon={<Info viewBox="0 4 24 24" style={{width: 30, height: 30}}/>}
+            onTouchTap={() => { props.about(); }}
+        />,
+    ];
 
     return (<List>{items}</List>);
 };
@@ -30,6 +44,7 @@ MenuList.propTypes = {
     mirrors: React.PropTypes.array,
     onTouchStart: React.PropTypes.func,
     homepage: React.PropTypes.func,
+    about: React.PropTypes.func,
 };
 
 export default MenuList;

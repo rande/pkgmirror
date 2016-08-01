@@ -18,6 +18,10 @@ const mapDispatchToProps = (dispatch) => ({
         dispatch(push('/'));
         dispatch(hideDrawer());
     },
+    about: () => {
+        dispatch(push('/about'));
+        dispatch(hideDrawer());
+    },
     onTouchStart: (mirror) => {
         dispatch(push(`/mirror/${mirror.Id}`));
         dispatch(hideDrawer());
