@@ -94,11 +94,14 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		preAction := func(fn http.Handler) func(w http.ResponseWriter, r *http.Request) {
 			return func(w http.ResponseWriter, r *http.Request) {
 
-				for name := range config.Git {
-					path := "/git/" + name
+				for name, conf := range config.Git {
+					path := "/git/" + conf.Server
+
+					if !conf.Enabled { // not enable skip
+						continue
+					}
 
 					if len(r.URL.Path) > len(path) && path == r.URL.Path[0:len(path)] {
-
 						//found match
 						s := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(*GitService)
 
@@ -106,25 +109,44 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 							break // not configured, so skip clone
 						}
 
-						reg := regexp.MustCompile(fmt.Sprintf(`/git/%s/((.*)\.git)(|.*)`, name))
+						expression := fmt.Sprintf(`/git/%s/((.*)\.git)(|.*)`, conf.Server)
+
+						l := logger.WithFields(log.Fields{
+							"path":       r.URL.Path,
+							"handler":    "git",
+							"code":       name,
+							"expression": expression,
+						})
+
+						reg := regexp.MustCompile(expression)
 
 						path := ""
 						if results := reg.FindStringSubmatch(r.URL.Path); len(results) > 0 {
 							path = results[1]
 						} else {
+							l.Error("Unable to find valid git path")
+
 							break // not valid
 						}
 
 						if s.Has(path) { // repository exists, nothing to do
+							l.Debug("Skipping cloning, repository exist")
+
 							break
 						}
 
 						// not available, clone the repository
 						if err := s.Clone(path); err != nil {
-							logger.WithError(err).Error("Unable to clone the repository")
+							l.WithError(err).Error("Unable to clone the repository")
 						}
 
 						break
+					} else {
+						logger.WithFields(log.Fields{
+							"path":    r.URL.Path,
+							"handler": "git",
+							"code":    name,
+						}).Warn("Does not match auto clone path")
 					}
 				}
 

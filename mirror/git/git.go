@@ -292,8 +292,6 @@ func (gs *GitService) Clone(path string) error {
 	gitPath := gs.dataFolder() + string(filepath.Separator) + path
 	remote := strings.Replace(gs.Config.Clone, "{path}", path, -1)
 
-	fmt.Println("Clone:", gs.Config.Clone, "Remote:", remote, "Path:", path)
-
 	if gs.Config.Clone == remote {
 		// same key, no replacement
 		return pkgmirror.SameKeyError
