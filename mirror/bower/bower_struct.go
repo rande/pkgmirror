@@ -6,8 +6,9 @@
 package bower
 
 type Package struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	SourceUrl string `json:"source_url"`
 }
 
 type Packages []*Package

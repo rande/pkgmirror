@@ -146,14 +146,30 @@ func (bs *BowerService) SyncPackages() error {
 				"package": pkg.Name,
 			})
 
+			saved := &Package{}
+			data := b.Get([]byte(pkg.Name))
+
+			if len(data) > 0 {
+				if err := json.Unmarshal(data, saved); err != nil {
+					logger.WithError(err).Info("Error while unmarshaling current package")
+				} else {
+					if saved.SourceUrl == pkg.Url {
+						logger.Debug("Skip package!")
+
+						return nil // same package no change, avoid io
+					}
+				}
+			}
+
 			bs.StateChan <- pkgmirror.State{
 				Message: fmt.Sprintf("Save package information: %s", pkg.Name),
 				Status:  pkgmirror.STATUS_RUNNING,
 			}
 
+			pkg.SourceUrl = pkg.Url
 			pkg.Url = git.GitRewriteRepository(bs.Config.PublicServer, pkg.Url)
 
-			data, _ := json.Marshal(pkg)
+			data, _ = json.Marshal(pkg)
 
 			// store the path
 			if err := b.Put([]byte(pkg.Name), data); err != nil {
