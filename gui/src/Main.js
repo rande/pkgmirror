@@ -7,16 +7,14 @@ import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
-import {SMALL, MEDIUM, LARGE} from 'material-ui/utils/withWidth';
-
+import { SMALL } from 'material-ui/utils/withWidth';
 import { connect } from 'react-redux';
-import { MirrorList, MenuList, CardMirror } from './redux/containers';
-
-import { toggleDrawer, hideDrawer } from './redux/apps/guiApp';
-import About from './components/About';
-
 import { Router, Route, IndexRoute } from 'react-router';
 import { push } from 'react-router-redux';
+
+import { MirrorList, MenuList, CardMirror } from './redux/containers';
+import { toggleDrawer, hideDrawer } from './redux/apps/guiApp';
+import About from './components/About';
 
 const Container = props => (
     <div>{props.children}</div>
@@ -26,39 +24,38 @@ Container.propTypes = {
     children: React.PropTypes.any,
 };
 
-const Main = props => {
-
+const Main = (props) => {
     let DrawerOpen = false;
     let marginLeft = 0;
-    if (props.width == SMALL && props.DrawerOpen) {
+    if (props.width === SMALL && props.DrawerOpen) {
         DrawerOpen = true;
     }
 
-    if (props.width != SMALL) {
+    if (props.width !== SMALL) {
         DrawerOpen = true;
         marginLeft = 300;
     }
 
-    return <MuiThemeProvider muiTheme={props.Theme}>
+    return (<MuiThemeProvider muiTheme={props.Theme}>
         <div>
             <AppBar
                 title={props.Title}
                 iconClassNameRight="muidocs-icon-navigation-expand-more"
                 onLeftIconButtonTouchTap={props.toggleDrawer}
-                showMenuIconButton={props.width == SMALL}
+                showMenuIconButton={props.width === SMALL}
             />
 
-            <Drawer open={DrawerOpen} docked={true} width={300}>
+            <Drawer open={DrawerOpen} docked width={300}>
                 <AppBar
                     title={props.Title}
                     onLeftIconButtonTouchTap={props.toggleDrawer}
-                    showMenuIconButton={props.width == SMALL}
+                    showMenuIconButton={props.width === SMALL}
                 />
 
                 <MenuList />
             </Drawer>
 
-            <div className="foobar" style={{marginLeft: marginLeft + 'px'}}>
+            <div className="foobar" style={{ marginLeft: `${marginLeft}px` }}>
                 <Router history={props.history} >
                     <Route path="/" component={Container}>
                         <IndexRoute component={MirrorList} />
@@ -68,7 +65,7 @@ const Main = props => {
                 </Router>
             </div>
         </div>
-    </MuiThemeProvider>
+    </MuiThemeProvider>);
 };
 
 Main.propTypes = {
@@ -77,19 +74,14 @@ Main.propTypes = {
     DrawerOpen: React.PropTypes.bool,
     toggleDrawer: React.PropTypes.func,
     history: React.PropTypes.object,
-    homepage: React.PropTypes.func,
     width: React.PropTypes.number.isRequired,
 };
 
-const mapStateToProps = (state) => ({ ...state.guiApp });
+const mapStateToProps = state => ({ ...state.guiApp });
 
-const mapDispatchToProps = (dispatch) => ({
+const mapDispatchToProps = dispatch => ({
     toggleDrawer: () => {
         dispatch(toggleDrawer());
-    },
-    homepage: () => {
-        dispatch(push('/'));
-        dispatch(hideDrawer());
     },
 });
 

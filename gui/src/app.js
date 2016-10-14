@@ -28,10 +28,10 @@ const reducers = combineReducers({
     routing: routerReducer,
 });
 
-let store = createStore(reducers, applyMiddleware(middleware));
+const store = createStore(reducers, applyMiddleware(middleware));
 
 if (window) {
-    var deferTimer;
+    let deferTimer;
     window.addEventListener('resize', () => {
         clearTimeout(deferTimer);
         deferTimer = setTimeout(() => {
@@ -48,8 +48,8 @@ const history = syncHistoryWithStore(hashHistory, store);
 //     // console.log("Render Main", location);
 // });
 
-fetch('/api/mirrors').then(res => {
-    res.json().then(data => {
+fetch('/api/mirrors').then((res) => {
+    res.json().then((data) => {
         store.dispatch(addList(data));
     });
 });

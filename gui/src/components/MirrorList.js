@@ -4,30 +4,28 @@
 // license that can be found in the LICENSE file.
 
 import React from 'react';
-import { List, ListItem } from 'material-ui/List';
-import {GridList, GridTile} from 'material-ui/GridList';
-import {SMALL, MEDIUM, LARGE} from 'material-ui/utils/withWidth';
+import { GridList, GridTile } from 'material-ui/GridList';
+import { MEDIUM, LARGE } from 'material-ui/utils/withWidth';
 
-import Avatar from 'material-ui/Avatar';
 import ActionInfo from 'material-ui/svg-icons/action/info';
 import ContentBlock from 'material-ui/svg-icons/content/block';
 import PlayCircle from 'material-ui/svg-icons/av/loop';
 import PauseCircle from 'material-ui/svg-icons/av/pause-circle-filled';
 
-const MirrorList = props => {
+const MirrorList = (props) => {
     const { mirrors, events } = props;
 
     let cols = 2,
         cellHeight = 150;
 
-    if (props.width == MEDIUM) {
-        cols=2;
-        cellHeight=200;
+    if (props.width === MEDIUM) {
+        cols = 2;
+        cellHeight = 200;
     }
 
-    if (props.width == LARGE) {
-        cols=4;
-        cellHeight=300;
+    if (props.width === LARGE) {
+        cols = 4;
+        cellHeight = 300;
     }
 
     return (
@@ -55,7 +53,7 @@ const MirrorList = props => {
 
                 text += ` - ${events[mirror.Id].Message}`;
             }
-            
+
             return (<GridTile
                 key={pos}
                 title={mirror.SourceUrl}
@@ -64,8 +62,8 @@ const MirrorList = props => {
                 actionIcon={rightIcon}
                 actionPosition="left"
                 onClick={() => { props.onTouchStart(mirror); }}
-                >
-                    <img src={mirror.Icon} />
+            >
+                <img src={mirror.Icon} role="presentation" />
             </GridTile>)
             ;
         })}</GridList>

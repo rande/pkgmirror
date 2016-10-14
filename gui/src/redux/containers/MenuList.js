@@ -4,16 +4,16 @@
 // license that can be found in the LICENSE file.
 
 import { connect } from 'react-redux';
+import { push } from 'react-router-redux';
 
 import MenuList from '../../components/MenuList';
-import { push } from 'react-router-redux';
 import { hideDrawer } from '../apps/guiApp';
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = state => ({
     mirrors: state.mirrorApp.mirrors,
 });
 
-const mapDispatchToProps = (dispatch) => ({
+const mapDispatchToProps = dispatch => ({
     homepage: () => {
         dispatch(push('/'));
         dispatch(hideDrawer());
