@@ -7,7 +7,23 @@
     },
     "rules": {
         "indent": ["error", 4],
-        "react/jsx-indent": [2, 4],
-        "react/jsx-indent-props": [2, 4]
+        "react/jsx-indent": ["error", 4],
+        "react/jsx-indent-props": ["error", 4],
+        "import/prefer-default-export": "off",
+        "react/jsx-filename-extension": "off",
+        "max-len": "off",
+        "react/forbid-prop-types": "off",
+        "react/no-danger": "off",
+        "no-param-reassign": ["error", { "props": false }],
+        "quote-props": ["error", "consistent-as-needed"],
+        "arrow-body-style": "off",
+        "no-underscore-dangle": ["error", {"allow": ["__PRELOADED_STATE__"]}],
+        "import/no-extraneous-dependencies": ["error", {"devDependencies": ["**/*.test.js", "**/*.spec.js"]}],
+        "new-cap": "off"
+    },
+    "env": {
+        "browser": true,
+        "node": true,
+        "jest": true
     }
 }

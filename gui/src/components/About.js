@@ -5,8 +5,8 @@
 
 import React from 'react';
 
-const About = props => (
-    <div style={{padding: 10}}>
+const About = () => (
+    <div style={{ padding: 10 }}>
         <h1>PkgMirror</h1>
         <p>
             This project has been created by <a href="https://thomas.rabaix.net">Thomas Rabaix</a> to
