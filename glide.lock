@@ -1,57 +1,62 @@
-hash: b26a2162de8527facf9a78e41fb9eaa731033bdbc30b844032c6ca4373c09b1a
-updated: 2016-07-17T01:20:20.792520086+02:00
+hash: 4ee4147adf0274612adec2a28c8cd078bf306544fdbdc9ea8ecc1e2279ca0dd1
+updated: 2016-10-17T23:37:28.066913991+02:00
 imports:
 - name: github.com/AaronO/go-git-http
-  version: 34209cf6cd947cfa52063bcb0f6d43cfa50c5566
+  version: a8b8273a5ac1dbfb412cd2b70382badb1aceeadb
+  repo: https://github.com/rande/go-git-http.git
+  vcs: git
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: b85eaebe3c12e8db01a7c26882457c5c51100471
+  version: 7557129b846473b8edd52853c077d21b7934b699
   subpackages:
   - aws
-  - aws/credentials
-  - aws/session
-  - service/s3
   - aws/awserr
-  - aws/client
-  - aws/corehandlers
-  - aws/defaults
-  - aws/request
-  - private/endpoints
   - aws/awsutil
+  - aws/client
   - aws/client/metadata
-  - aws/signer/v4
-  - private/protocol
-  - private/protocol/restxml
-  - private/waiter
+  - aws/corehandlers
+  - aws/credentials
   - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
   - aws/ec2metadata
-  - private/protocol/rest
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/endpoints
+  - private/protocol
   - private/protocol/query
-  - private/protocol/xml/xmlutil
   - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/s3
+  - service/sts
 - name: github.com/bakins/logrus-middleware
   version: 2f037bcda984f172af9c62c9048a5e6c12fa3179
 - name: github.com/bgentry/speakeasy
-  version: e1439544d8ecd0f3e9373a636d447668096a8f81
+  version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
 - name: github.com/boltdb/bolt
-  version: dfb21201d9270c1082d5fb0f07f500311ff72f18
+  version: 583e8937c61f1af6513608ccc75c97b6abdf4ff9
 - name: github.com/BurntSushi/toml
   version: bbd5bb678321a0d6e58f1099321dfa73391c1b6f
 - name: github.com/davecgh/go-spew
-  version: 2df174808ee097f90d259e432cc04442cf60be21
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
 - name: github.com/go-ini/ini
-  version: 72ba3e6b9e6b87e0c74c9a7a4dc86e8dd8ba4355
+  version: 6e4869b434bd001f6983749881c7ead3545887d8
 - name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
-  version: 56b76bdf51f7708750eac80fa38b952bb9f32639
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/mitchellh/cli
-  version: 168daae10d6ff81b8b1201b0a4c9607d7e9b82e3
+  version: 074e243518e473e0887217008dd013e07755be8c
 - name: github.com/NYTimes/gziphandler
-  version: 63027b26b87e2ae2ce3810393d4b81021cfd3a35
+  version: f6438dbf4a82c56684964b03956aa727b0d7816b
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
@@ -59,7 +64,7 @@ imports:
 - name: github.com/rande/goapp
   version: 52b532af1ee53a5c7863590bb85f688b6163ac97
 - name: github.com/rande/gonode
-  version: a439e75556cc7e47fc1c0101dcc1def75abd39df
+  version: f9e1126252df14ef4e80752ba393bd0db5c7313c
   subpackages:
   - core/vault
 - name: github.com/Sirupsen/logrus
@@ -67,26 +72,22 @@ imports:
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
-  version: f390dcf405f7b83c997eac1b06768bb9f44dec18
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
   - mock
 - name: goji.io
   version: e1741450ad80d2837134e32ac7b1d0a7a2b11c51
   subpackages:
+  - internal
   - pat
   - pattern
-  - internal
 - name: golang.org/x/net
-  version: bc3663df0ac92f928d419e31e0d2af22e683a5a2
+  version: 8b4af36cd21a1f85a7484b49feb7c79363106d8e
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 62bee037599929a6e9146f29d10dd5208c43507d
+  version: 002cbb5f952456d0c50e0d2aff17ea5eca716979
   subpackages:
   - unix
-testImports:
-- name: github.com/stretchr/testify
-  version: f390dcf405f7b83c997eac1b06768bb9f44dec18
-  subpackages:
-  - assert
+testImports: []
