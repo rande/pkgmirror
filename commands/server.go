@@ -23,6 +23,7 @@ import (
 	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/mirror/npm"
+	"github.com/rande/pkgmirror/mirror/static"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -76,6 +77,7 @@ func (c *ServerCommand) Run(args []string) int {
 	git.ConfigureApp(config, l)
 	npm.ConfigureApp(config, l)
 	bower.ConfigureApp(config, l)
+	static.ConfigureApp(config, l)
 	api.ConfigureApp(config, l)
 	assets.ConfigureApp(config, l)
 

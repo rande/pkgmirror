@@ -15,4 +15,5 @@ var (
 	ResourceNotFoundError = errors.New("Resource not found")
 	EmptyDataError        = errors.New("Empty data")
 	SameKeyError          = errors.New("Same key")
+	HttpError             = errors.New("Http error")
 )
