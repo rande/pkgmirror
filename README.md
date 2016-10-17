@@ -29,6 +29,7 @@ Documentations
  * [Git](docs/git.md)
  * [Npm](docs/npm.md)
  * [Bower](docs/bower.md)
+ * [Static](docs/static.md)
  
 GUI
 ---

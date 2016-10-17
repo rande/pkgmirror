@@ -125,6 +125,23 @@ the github mirror is properly configured.
 			d = append(d, s)
 		}
 
+		for code, conf := range config.Static {
+			s := &ServiceMirror{}
+			s.Id = fmt.Sprintf("pkgmirror.static.%s", code)
+			s.Icon = conf.Icon
+			s.Type = "static"
+			s.Name = code
+			s.SourceUrl = conf.Server
+			s.TargetUrl = fmt.Sprintf("%s/static/%s", config.PublicServer, code)
+			s.Enabled = conf.Enabled
+			s.Usage = fmt.Sprintf(`
+You just need to reference the server as %s/myfile.zip, the static handle will retrieve the file
+from %s/myfile.zip and store a copy on the mirror server.
+`, s.TargetUrl, s.SourceUrl)
+
+			d = append(d, s)
+		}
+
 		pkgmirror.Serialize(w, d)
 	}
 }
