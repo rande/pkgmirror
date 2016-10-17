@@ -470,6 +470,8 @@ func (ps *ComposerService) UpdatePackage(name string) error {
 			"error":   err.Error(),
 			"action":  "UpdatePackage",
 		}).Error("Error loading package information")
+
+		return err
 	}
 
 	if err := ps.savePackage(pkg); err != nil {
@@ -609,5 +611,6 @@ func (ps *ComposerService) CleanPackages() error {
 		Message: "End cleaning packages",
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
+
 	return nil
 }

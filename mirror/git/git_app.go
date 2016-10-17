@@ -25,7 +25,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 	l.Register(func(app *goapp.App) error {
 		logger := app.Get("logger").(*log.Logger)
 
-		vault := &vault.Vault{
+		v := &vault.Vault{
 			Algo: "no_op",
 			Driver: &vault.DriverFs{
 				Root: fmt.Sprintf("%s/git", config.CacheDir),
@@ -45,7 +45,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 					s.Config.PublicServer = config.PublicServer
 					s.Config.DataDir = fmt.Sprintf("%s/git", config.DataDir)
 					s.Config.Clone = conf.Clone
-					s.Vault = vault
+					s.Vault = v
 					s.Logger = logger.WithFields(log.Fields{
 						"handler": "git",
 						"code":    name,

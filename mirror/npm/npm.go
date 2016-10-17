@@ -165,6 +165,8 @@ func (ns *NpmService) SyncPackages() error {
 
 	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {
 		logger.WithError(err).Error("Unable to load all npm packages")
+
+		return err
 	}
 
 	logger.WithFields(log.Fields{

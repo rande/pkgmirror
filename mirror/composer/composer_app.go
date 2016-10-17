@@ -35,6 +35,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 					s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
 					s.Config.PublicServer = config.PublicServer
 					s.Config.SourceServer = conf.Server
+					s.Config.Code = []byte(name)
 					s.Logger = logger.WithFields(log.Fields{
 						"handler": "composer",
 						"server":  s.Config.SourceServer,
