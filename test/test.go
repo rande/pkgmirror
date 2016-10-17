@@ -28,6 +28,7 @@ import (
 	"github.com/rande/pkgmirror/mirror/composer"
 	"github.com/rande/pkgmirror/mirror/git"
 	"github.com/rande/pkgmirror/mirror/npm"
+	"github.com/rande/pkgmirror/mirror/static"
 	"github.com/stretchr/testify/assert"
 	"goji.io"
 )
@@ -79,7 +80,7 @@ func (r Response) GetBody() []byte {
 		r.RawBody, err = ioutil.ReadAll(r.Body)
 		r.Body.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Fail to GetBody of with error: %s", err)
 		}
 
 		r.bodyRead = true
@@ -140,6 +141,7 @@ type TestOptin struct {
 	Npm      bool
 	Git      bool
 	Bower    bool
+	Static   bool
 }
 
 func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
@@ -151,6 +153,7 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 		"%s/data/composer",
 		"%s/data/bower",
 		"%s/data/git",
+		"%s/data/static",
 		"%s/cache/git",
 	}
 
@@ -162,11 +165,11 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 	}
 
 	if optin.Git {
-
 		targets := []string{
 			"data/git/local/foo.git",     // use as already available repository
 			"data/git/source/foobar.git", // use as a source for cloning missing repository
 		}
+
 		for _, target := range targets {
 			cmd := exec.Command("git", strings.Split(fmt.Sprintf("clone --mirror ../../fixtures/git/foo.bare %s/%s", baseFolder, target), " ")...)
 
@@ -225,6 +228,13 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 				Icon:    "https://bower.io/img/bower-logo.svg",
 			},
 		},
+		Static: map[string]*pkgmirror.StaticConfig{
+			"static": {
+				Server:  ms.URL + "/static",
+				Enabled: optin.Static,
+				Icon:    "",
+			},
+		},
 	}
 
 	app, err := pkgmirror.GetApp(config, l)
@@ -236,6 +246,7 @@ func RunHttpTest(t *testing.T, optin *TestOptin, f func(args *Arguments)) {
 	npm.ConfigureApp(config, l)
 	composer.ConfigureApp(config, l)
 	bower.ConfigureApp(config, l)
+	static.ConfigureApp(config, l)
 
 	l.Run(func(app *goapp.App, state *goapp.GoroutineState) error {
 		mux := app.Get("mux").(*goji.Mux)

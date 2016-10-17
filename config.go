@@ -33,6 +33,12 @@ type GitConfig struct {
 	Clone   string
 }
 
+type StaticConfig struct {
+	Server  string
+	Enabled bool
+	Icon    string
+}
+
 type Config struct {
 	DataDir        string
 	LogDir         string
@@ -44,4 +50,5 @@ type Config struct {
 	Npm            map[string]*NpmConfig
 	Git            map[string]*GitConfig
 	Bower          map[string]*BowerConfig
+	Static         map[string]*StaticConfig
 }

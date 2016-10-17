@@ -96,3 +96,16 @@ You need to declare the mirror in your .bowerrc file:
             "register": "https://localhost/bower/bower"
         }
     }
+
+Static
+------
+
+To add a new server:
+
+    [Static]
+        [Static.drupal]
+        Server = "https://ftp.drupal.org/files/projects"
+        Icon = "https://www.drupal.org/files/druplicon-small.png"
+        
+You can now download file from ``https://localhos/static/drupal/panopoly-7.x-1.40-core.tar.gz``
+
