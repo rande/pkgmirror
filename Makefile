@@ -5,8 +5,8 @@ GO_BINDATA_PATHS = $(shell pwd)/gui/build
 GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
-GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./test/tools ./test/api ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm ./mirror/bower ./commands
-GO_PKG = ./,./mirror/composer,./mirror/git,./mirror/npm,./mirror/bower,./api
+GO_PROJECTS_PATHS = ./ ./test ./test/mirror ./test/tools ./test/api ./api ./assets ./cli ./mirror/composer ./mirror/git ./mirror/npm ./mirror/bower ./mirror/static ./commands
+GO_PKG = ./,./mirror/composer,./mirror/git,./mirror/npm,./mirror/bower,./mirror/static,./api
 GO_FILES = $(shell find $(GO_PROJECTS_PATHS) -maxdepth 1 -type f -name "*.go")
 JS_FILES = $(shell find ./gui/src -type f -name "*.js")
 
