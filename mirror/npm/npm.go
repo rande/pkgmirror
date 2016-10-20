@@ -57,25 +57,19 @@ type NpmService struct {
 	StateChan chan pkgmirror.State
 }
 
-func (ns *NpmService) Init(app *goapp.App) error {
-	var err error
-
+func (ns *NpmService) Init(app *goapp.App) (err error) {
 	ns.Logger.Info("Init")
 
-	ns.DB, err = bolt.Open(fmt.Sprintf("%s/%s.db", ns.Config.Path, ns.Config.Code), 0600, &bolt.Options{
-		Timeout:  1 * time.Second,
-		ReadOnly: false,
-	})
-
-	if err != nil {
-		return err
+	if ns.DB, err = pkgmirror.OpenDatabaseWithBucket(ns.Config.Path, ns.Config.Code); err != nil {
+		ns.Logger.WithFields(log.Fields{
+			"error":  err,
+			"path":   ns.Config.Path,
+			"bucket": string(ns.Config.Code),
+			"action": "Init",
+		}).Error("Unable to open the internal database")
 	}
 
-	return ns.DB.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(ns.Config.Code)
-
-		return err
-	})
+	return
 }
 
 func (ns *NpmService) Serve(state *goapp.GoroutineState) error {

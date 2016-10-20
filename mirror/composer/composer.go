@@ -45,25 +45,19 @@ type ComposerService struct {
 	StateChan chan pkgmirror.State
 }
 
-func (ps *ComposerService) Init(app *goapp.App) error {
-	var err error
-
+func (ps *ComposerService) Init(app *goapp.App) (err error) {
 	ps.Logger.Info("Init")
 
-	ps.DB, err = bolt.Open(fmt.Sprintf("%s/%s.db", ps.Config.Path, ps.Config.Code), 0600, &bolt.Options{
-		Timeout:  1 * time.Second,
-		ReadOnly: false,
-	})
-
-	if err != nil {
-		return err
+	if ps.DB, err = pkgmirror.OpenDatabaseWithBucket(ps.Config.Path, ps.Config.Code); err != nil {
+		ps.Logger.WithFields(log.Fields{
+			"error":  err,
+			"path":   ps.Config.Path,
+			"bucket": string(ps.Config.Code),
+			"action": "Init",
+		}).Error("Unable to open the internal database")
 	}
 
-	return ps.DB.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(ps.Config.Code)
-
-		return err
-	})
+	return
 }
 
 func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {

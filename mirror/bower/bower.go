@@ -43,25 +43,19 @@ type BowerService struct {
 	StateChan chan pkgmirror.State
 }
 
-func (bs *BowerService) Init(app *goapp.App) error {
-	var err error
-
+func (bs *BowerService) Init(app *goapp.App) (err error) {
 	bs.Logger.Info("Init")
 
-	bs.DB, err = bolt.Open(fmt.Sprintf("%s/%s.db", bs.Config.Path, bs.Config.Code), 0600, &bolt.Options{
-		Timeout:  1 * time.Second,
-		ReadOnly: false,
-	})
-
-	if err != nil {
-		return err
+	if bs.DB, err = pkgmirror.OpenDatabaseWithBucket(bs.Config.Path, bs.Config.Code); err != nil {
+		bs.Logger.WithFields(log.Fields{
+			"error":  err,
+			"path":   bs.Config.Path,
+			"bucket": string(bs.Config.Code),
+			"action": "Init",
+		}).Error("Unable to open the internal database")
 	}
 
-	return bs.DB.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(bs.Config.Code)
-
-		return err
-	})
+	return
 }
 
 func (bs *BowerService) Serve(state *goapp.GoroutineState) error {
