@@ -52,25 +52,19 @@ type StaticService struct {
 	StateChan chan pkgmirror.State
 }
 
-func (gs *StaticService) Init(app *goapp.App) error {
+func (gs *StaticService) Init(app *goapp.App) (err error) {
 	os.MkdirAll(string(filepath.Separator)+gs.Config.Path, 0755)
 
-	var err error
-
-	gs.DB, err = bolt.Open(fmt.Sprintf("%s/%s.db", gs.Config.Path, gs.Config.Code), 0600, &bolt.Options{
-		Timeout:  1 * time.Second,
-		ReadOnly: false,
-	})
-
-	if err != nil {
-		return err
+	if gs.DB, err = pkgmirror.OpenDatabaseWithBucket(gs.Config.Path, gs.Config.Code); err != nil {
+		gs.Logger.WithFields(log.Fields{
+			"error":  err,
+			"path":   gs.Config.Path,
+			"bucket": string(gs.Config.Code),
+			"action": "Init",
+		}).Error("Unable to open the internal database")
 	}
 
-	return gs.DB.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(gs.Config.Code)
-
-		return err
-	})
+	return
 }
 
 func (gs *StaticService) Serve(state *goapp.GoroutineState) error {

@@ -40,7 +40,10 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						"code":    name,
 					})
 					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.bower.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
-					s.Init(app)
+
+					if err := s.Init(app); err != nil {
+						panic(err)
+					}
 
 					return s
 				}
