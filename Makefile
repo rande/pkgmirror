@@ -63,7 +63,7 @@ install-backend:  ## Install backend dependencies
 	glide install
 
 install-frontend:  ## Install frontend dependencies
-	cd gui && npm install
+	cd gui && yarn --no-progress
 
 update:  ## Update dependencies
 	glide update

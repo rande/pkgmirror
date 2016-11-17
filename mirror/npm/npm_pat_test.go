@@ -38,6 +38,19 @@ func Test_Npm_Pat_Archive(t *testing.T) {
 	assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
 }
 
+func Test_Npm_Pat_Archive_NonSemver(t *testing.T) {
+	p := NewArchivePat("npm")
+
+	c, r := mustReq("GET", "/npm/npm/dateformat/-/dateformat-1.0.2-1.2.3.tgz")
+
+	result := p.Match(c, r)
+
+	assert.NotNil(t, result)
+	assert.Equal(t, "dateformat", result.Value(pattern.Variable("package")))
+	assert.Equal(t, "1.0.2-1.2.3", result.Value(pattern.Variable("version")))
+	assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
+}
+
 func Test_Npm_Pat_AllVariables(t *testing.T) {
 	p := NewArchivePat("npm")
 
