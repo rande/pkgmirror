@@ -25,7 +25,13 @@ func Test_Static_Get_Valid_File(t *testing.T) {
 		assert.Equal(t, "This is a sample test file.", string(res.GetBody()))
 
 		// get the proxied file
+		res, err = test.RunRequest("GET", fmt.Sprintf("%s/static/static/file.txt", args.TestServer.URL))
 
+		assert.NoError(t, err)
+		assert.Equal(t, 200, res.StatusCode)
+		assert.Equal(t, "This is a sample test file.", string(res.GetBody()))
+
+		// test if the second time the code work fine (using the cache)
 		res, err = test.RunRequest("GET", fmt.Sprintf("%s/static/static/file.txt", args.TestServer.URL))
 
 		assert.NoError(t, err)
