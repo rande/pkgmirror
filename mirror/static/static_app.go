@@ -6,10 +6,9 @@
 package static
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
-
-	"bytes"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
@@ -109,6 +108,7 @@ func ConfigureHttp(name string, conf *pkgmirror.StaticConfig, app *goapp.App) {
 
 			pkgmirror.SendWithHttpCode(w, code, err.Error())
 		} else {
+
 			// copy header
 			for name := range file.Header {
 				if name == "Content-Length" {

@@ -74,15 +74,17 @@ func (gs *StaticService) Serve(state *goapp.GoroutineState) error {
 }
 
 func (gs *StaticService) WriteArchive(w io.Writer, path string) (*StaticFile, error) {
-	logger := gs.Logger.WithFields(log.Fields{
-		"path":   path,
-		"action": "WriteArchive",
-	})
-
 	vaultKey := fmt.Sprintf("%s", path)
 	bucketKey := vaultKey
-
 	url := fmt.Sprintf("%s/%s", gs.Config.SourceServer, path)
+
+	logger := gs.Logger.WithFields(log.Fields{
+		"path":      path,
+		"action":    "WriteArchive",
+		"vaultKey":  vaultKey,
+		"bucketKey": bucketKey,
+		"url":       url,
+	})
 
 	file := &StaticFile{}
 
@@ -104,7 +106,7 @@ func (gs *StaticService) WriteArchive(w io.Writer, path string) (*StaticFile, er
 
 	if err == pkgmirror.EmptyDataError {
 		file.Url = url
-	} else {
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -163,6 +165,8 @@ func (gs *StaticService) WriteArchive(w io.Writer, path string) (*StaticFile, er
 
 			return nil
 		})
+	} else {
+		logger.Info("Vault entry exist!")
 	}
 
 	logger.Info("Read vault entry")
