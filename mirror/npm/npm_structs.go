@@ -7,33 +7,7 @@ package npm
 
 import (
 	"encoding/json"
-	"time"
 )
-
-type All map[string]*ShortPackageDefinition
-
-type ShortPackageDefinition struct {
-	Name string `json:"name,omitempty"`
-	//Description string           `json:"description,omitempty"`
-	//DistTags    *json.RawMessage `json:"dist-tags,omitempty"`
-	//Maintainers *json.RawMessage `json:"maintainers,omitempty"`
-	//Author      *json.RawMessage `json:"author,omitempty"`
-	//Users       *json.RawMessage `json:"users,omitempty"`
-	//Repository  struct {
-	//	Type string `json:"type,omitempty"`
-	//	URL  string `json:"url,omitempty"`
-	//} `json:"repository,omitempty"`
-	//Homepage       string           `json:"homepage,omitempty"`
-	//Bugs           *json.RawMessage `json:"bugs,omitempty"`
-	//ReadmeFilename string           `json:"readmeFilename,omitempty"`
-	//Keywords       []string         `json:"keywords,omitempty"`
-	//License        string           `json:"license,omitempty"`
-	Time struct {
-		Modified time.Time `json:"modified,omitempty"`
-	} `json:"time,omitempty"`
-	//Versions map[string]string `json:"versions,omitempty"`
-	FullPackageDefinition FullPackageDefinition `json:"-"`
-}
 
 type PackageVersionDefinition struct {
 	Name        string           `json:"name,omitempty"`
@@ -80,6 +54,12 @@ type PackageVersionDefinition struct {
 	} `json:"dist,omitempty"`
 	//NpmOperationalInternal *json.RawMessage `json:"_npmOperationalInternal,omitempty"`
 	Directories *json.RawMessage `json:"directories,omitempty"`
+}
+
+type ShortPackageDefinition struct {
+	ID   string `json:"_id,omitempty"`
+	Rev  string `json:"_rev,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 type FullPackageDefinition struct {

@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -59,6 +59,11 @@ type NpmService struct {
 
 func (ns *NpmService) Init(app *goapp.App) (err error) {
 	ns.Logger.Info("Init")
+
+	ns.Logger.WithFields(log.Fields{
+		"basePath": ns.Config.Path,
+		"name":     ns.Config.Code,
+	}).Info("Init bolt db")
 
 	if ns.DB, err = pkgmirror.OpenDatabaseWithBucket(ns.Config.Path, ns.Config.Code); err != nil {
 		ns.Logger.WithFields(log.Fields{
@@ -121,177 +126,161 @@ func (ns *NpmService) SyncPackages() error {
 
 	logger.Info("Starting SyncPackages")
 
-	p := make(map[string]*json.RawMessage)
-
-	logger.WithFields(log.Fields{
-		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
-	}).Info("Load all packages")
-
 	ns.StateChan <- pkgmirror.State{
 		Message: "Fetching packages metadatas",
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
 
-	filename := fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code))
-	f, err := os.Create(filename)
+	logger.Info("Wait worker to complete")
 
-	if err != nil {
-		logger.WithError(err).WithField("file", filename).Error("Unable to open file")
-
-		return err
-	}
-
-	defer f.Close()
-
-	if resp, err := http.Get(fmt.Sprintf("%s/-/all", ns.Config.SourceServer)); err != nil {
-		logger.WithError(err).Error("Unable to download npm packages")
-
-		return err
-	} else {
-		defer resp.Body.Close()
-
-		if _, err := io.Copy(f, resp.Body); err != nil {
-			logger.WithError(err).Error("Unable to store packages metadata file (/-/all)")
-
-			return err
-		}
-	}
-
-	if err := pkgmirror.LoadStruct(fmt.Sprintf("%s/%s_all.json", ns.Config.Path, string(ns.Config.Code)), &p); err != nil {
-		logger.WithError(err).Error("Unable to load all npm packages")
-
-		return err
-	}
-
-	logger.WithFields(log.Fields{
-		"url": fmt.Sprintf("%s/-/all", ns.Config.SourceServer),
-	}).Info("End loading packages's metadata")
-
-	dm := pkgmirror.NewWorkerManager(60, func(id int, data <-chan interface{}, result chan interface{}) {
+	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
 		for raw := range data {
-			sp := raw.(ShortPackageDefinition)
+			currentPkg := raw.(ShortPackageDefinition)
+			remotePkg, err := ns.loadPackage(currentPkg.Name)
 
-			p := &FullPackageDefinition{}
-			url := fmt.Sprintf("%s/%s", ns.Config.SourceServer, sp.Name)
-
-			logger.WithFields(log.Fields{
-				"package": sp.Name,
-				"worker":  id,
-				"url":     url,
-			}).Debug("Loading package information")
-
-			if err := pkgmirror.LoadRemoteStruct(url, p); err != nil {
+			if err != nil {
 				logger.WithFields(log.Fields{
-					"package": sp.Name,
+					"package": currentPkg.Name,
 					"error":   err.Error(),
-					"worker":  id,
 				}).Error("Error loading package information")
 
 				continue
 			}
 
-			sp.FullPackageDefinition = *p
-			result <- sp
+			if currentPkg.Rev != remotePkg.Rev {
+				logger.WithFields(log.Fields{
+					"package":    currentPkg.Name,
+					"currentRev": currentPkg.Rev,
+					"remoteRev":  remotePkg.Rev,
+					"worker":     id,
+				}).Debug("Updating package information")
+
+				result <- *remotePkg
+			} else {
+				logger.WithFields(log.Fields{
+					"package":    currentPkg.Name,
+					"currentRev": currentPkg.Rev,
+					"remoteRev":  remotePkg.Rev,
+					"worker":     id,
+				}).Debug("Revisions are equal, nothing to update")
+			}
 		}
 	})
 
 	dm.ResultCallback(func(data interface{}) {
-		pkg := data.(ShortPackageDefinition)
+		pkg := data.(FullPackageDefinition)
 
-		ns.savePackage(&pkg)
+		_, err := ns.savePackage(&pkg)
+
+		if err != nil {
+			logger.WithFields(log.Fields{
+				"package": pkg.Name,
+			}).Debug("Error while saving the package")
+		}
 	})
 
 	dm.Start()
 
-	for name, raw := range p {
-		if name == "_updated" {
-			continue
-		}
+	ns.DB.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket(ns.Config.Code)
+		c := b.Cursor()
 
-		sp := &ShortPackageDefinition{}
-		tp := &ShortPackageDefinition{}
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			pkg := &ShortPackageDefinition{}
 
-		if err := json.Unmarshal(*raw, sp); err != nil {
-			logger.WithFields(log.Fields{
-				"error":   err,
-				"package": name,
-			}).Error("Unable to unmarshal remote data")
+			if len(k) < 5 || string(k[len(k)-5:len(k)]) != ".meta" {
+				logger.WithFields(log.Fields{
+					"package": string(k),
+				}).Debug("Skipping non meta entry")
 
-			continue
-		}
-
-		store := true
-		ns.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket(ns.Config.Code)
-
-			if err := json.Unmarshal(b.Get([]byte(fmt.Sprintf("%s.meta", name))), tp); err == nil {
-				if tp.Time.Modified == sp.Time.Modified {
-					store = false
-				}
+				continue
 			}
 
-			return nil
-		})
-
-		if store {
 			logger.WithFields(log.Fields{
-				"package": name,
-			}).Debug("Add/Update package to process")
+				"package": string(k),
+			}).Debug("Parsing entry")
 
-			dm.Add(*sp)
-		} else {
-			logger.WithFields(log.Fields{
-				"package": name,
-			}).Debug("Skip package")
+			err := json.Unmarshal(v, pkg)
+
+			if err != nil {
+				logger.WithFields(log.Fields{
+					"error":   err,
+					"package": string(k),
+				}).Error("Unable to Unmarshal the npm package")
+
+				continue
+			}
+
+			dm.Add(*pkg)
 		}
-	}
 
-	logger.Info("Wait worker to complete")
+		return nil
+	})
 
-	dm.Wait()
+	//dm.Wait()
 
 	return nil
 }
 
-func (ns *NpmService) savePackage(pkg *ShortPackageDefinition) error {
-	return ns.DB.Update(func(tx *bolt.Tx) error {
+func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
+	var data []byte
+	var datac []byte
+	var meta []byte
+	var err error
+
+	logger := ns.Logger.WithFields(log.Fields{
+		"package": pkg.Name,
+	})
+
+	logger.Info("Save package information")
+
+	ns.StateChan <- pkgmirror.State{
+		Message: fmt.Sprintf("Save package information: %s", pkg.Name),
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
+
+	// create the short version, to avoid storing to many useless information
+	shortPkg := &ShortPackageDefinition{
+		ID:   pkg.ID,
+		Rev:  pkg.Rev,
+		Name: pkg.Name,
+	}
+
+	if meta, err = json.Marshal(shortPkg); err != nil {
+		return data, err
+	}
+
+	for _, version := range pkg.Versions {
+		if results := NPM_ARCHIVE.FindStringSubmatch(version.Dist.Tarball); len(results) > 0 {
+			version.Dist.Tarball = fmt.Sprintf("%s/npm/%s/%s", ns.Config.PublicServer, string(ns.Config.Code), results[3])
+		} else {
+			logger.WithFields(log.Fields{
+				"error":   "regexp does not match",
+				"tarball": version.Dist.Tarball,
+			}).Error("Unable to find host")
+		}
+	}
+
+	data, err = json.Marshal(&pkg)
+	if err != nil {
+		logger.WithError(err).Error("Unable to marshal data")
+
+		return nil, err
+	}
+
+	err = ns.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ns.Config.Code)
 
-		logger := ns.Logger.WithFields(log.Fields{
-			"package": pkg.Name,
-		})
+		logger.Debug("Saving package meta")
 
-		logger.Info("Save package information")
+		if err = b.Put([]byte(fmt.Sprintf("%s.meta", pkg.Name)), meta); err != nil {
+			logger.WithError(err).Error("Unable to save package meta")
 
-		ns.StateChan <- pkgmirror.State{
-			Message: fmt.Sprintf("Save package information: %s", pkg.Name),
-			Status:  pkgmirror.STATUS_RUNNING,
-		}
-
-		if data, err := json.Marshal(pkg); err != nil {
 			return err
-		} else {
-			if err := b.Put([]byte(fmt.Sprintf("%s.meta", pkg.Name)), data); err != nil {
-				logger.WithError(err).Error("Unable to save package meta")
-			} else {
-				logger.Debug("Save package meta")
-			}
 		}
 
-		for _, version := range pkg.FullPackageDefinition.Versions {
-			if results := NPM_ARCHIVE.FindStringSubmatch(version.Dist.Tarball); len(results) > 0 {
-				version.Dist.Tarball = fmt.Sprintf("%s/npm/%s/%s", ns.Config.PublicServer, string(ns.Config.Code), results[3])
-			} else {
-				logger.WithFields(log.Fields{
-					"error":   "regexp does not match",
-					"tarball": version.Dist.Tarball,
-				}).Error("Unable to find host")
-			}
-		}
-
-		data, _ := json.Marshal(&pkg.FullPackageDefinition)
-
-		data, err := pkgmirror.Compress(data)
+		datac, err = pkgmirror.Compress(data)
 
 		if err != nil {
 			logger.WithError(err).Error("Unable to compress data")
@@ -299,26 +288,59 @@ func (ns *NpmService) savePackage(pkg *ShortPackageDefinition) error {
 			return err
 		}
 
-		// store the path
-		if err := b.Put([]byte(pkg.Name), data); err != nil {
+		if err := b.Put([]byte(pkg.Name), datac); err != nil {
 			logger.WithError(err).Error("Error updating/creating definition")
 
 			return err
-		} else {
-			logger.Debug("Save package")
 		}
+
+		logger.Debug("Save package")
 
 		return nil
 	})
+
+	return datac, err
+}
+
+func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
+
+	// handle scoped package
+	name = strings.Replace(name, "/", "%2f", -1)
+
+	logger := ns.Logger.WithFields(log.Fields{
+		"action": "loadPackage",
+		"name":   name,
+	})
+
+	logger.Info("Load remote data")
+
+	pkg := &FullPackageDefinition{}
+
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ns.Config.SourceServer, name), &pkg); err != nil {
+		logger.WithFields(log.Fields{
+			"path":  fmt.Sprintf("%s/%s", ns.Config.SourceServer, name),
+			"error": err.Error(),
+		}).Error("Error loading package definition")
+
+		return nil, err
+	}
+
+	if pkg.ID == "" {
+		return nil, pkgmirror.InvalidPackageError
+	}
+
+	return pkg, nil
 }
 
 func (ns *NpmService) Get(key string) ([]byte, error) {
 	var data []byte
 
-	ns.Logger.WithFields(log.Fields{
+	logger := ns.Logger.WithFields(log.Fields{
 		"action": "Get",
 		"key":    key,
-	}).Info("Get raw data")
+	})
+
+	logger.Info("Get raw data")
 
 	err := ns.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ns.Config.Code)
@@ -326,6 +348,8 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
+			logger.Info("Package does not exist in local DB")
+
 			return pkgmirror.EmptyKeyError
 		}
 
@@ -336,11 +360,33 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 		return nil
 	})
 
+	// the key is not here, get it from the source
+	if err == pkgmirror.EmptyKeyError {
+		return ns.updatePackage(key, "")
+	}
+
+	if err != nil {
+		return data, err
+	}
+
 	return data, err
 }
 
-func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
+func (ns *NpmService) updatePackage(key, rev string) ([]byte, error) {
+	pkg, err := ns.loadPackage(key)
 
+	if err != nil {
+		return []byte{}, err
+	}
+
+	if pkg.Rev == rev { // nothing to update
+		return []byte{}, nil
+	}
+
+	return ns.savePackage(pkg)
+}
+
+func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 	logger := ns.Logger.WithFields(log.Fields{
 		"package": pkg,
 		"version": version,

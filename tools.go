@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 )
 
 func OpenDatabaseWithBucket(basePath string, bucket []byte) (db *bolt.DB, err error) {
-	if err = os.MkdirAll(string(filepath.Separator)+basePath, 0755); err != nil {
+	if err = os.MkdirAll(basePath, 0755); err != nil {
 		return
 	}
 

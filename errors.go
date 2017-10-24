@@ -16,4 +16,5 @@ var (
 	EmptyDataError        = errors.New("Empty data")
 	SameKeyError          = errors.New("Same key")
 	HttpError             = errors.New("Http error")
+	InvalidPackageError   = errors.New("Invalid package error")
 )
