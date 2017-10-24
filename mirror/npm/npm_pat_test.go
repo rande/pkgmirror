@@ -15,6 +15,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+type TestVersion struct {
+	Url     string
+	Package string
+	Version string
+}
+
 func mustReq(method, path string) (context.Context, *http.Request) {
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
@@ -25,30 +31,26 @@ func mustReq(method, path string) (context.Context, *http.Request) {
 	return ctx, req
 }
 
-func Test_Npm_Pat_Archive(t *testing.T) {
-	p := NewArchivePat("npm")
+func Test_Npm_Pat(t *testing.T) {
 
-	c, r := mustReq("GET", "/npm/npm/aspace/-/aspace-0.0.1.tgz")
+	cases := []struct{ Url, Package, Version string }{
+		{"/npm/npm/aspace/-/aspace-0.0.1.tgz", "aspace", "0.0.1"},
+		{"/npm/npm/@type%2fnode/-/node-6.0.90.tgz", "@type%2fnode", "6.0.90"},
+		{"/npm/npm/dateformat/-/dateformat-1.0.2-1.2.3.tgz", "dateformat", "1.0.2-1.2.3"},
+	}
 
-	result := p.Match(c, r)
+	matcher := NewArchivePat("npm")
 
-	assert.NotNil(t, result)
-	assert.Equal(t, "aspace", result.Value(pattern.Variable("package")))
-	assert.Equal(t, "0.0.1", result.Value(pattern.Variable("version")))
-	assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
-}
+	for _, p := range cases {
+		c, r := mustReq("GET", p.Url)
 
-func Test_Npm_Pat_Archive_NonSemver(t *testing.T) {
-	p := NewArchivePat("npm")
+		result := matcher.Match(c, r)
 
-	c, r := mustReq("GET", "/npm/npm/dateformat/-/dateformat-1.0.2-1.2.3.tgz")
-
-	result := p.Match(c, r)
-
-	assert.NotNil(t, result)
-	assert.Equal(t, "dateformat", result.Value(pattern.Variable("package")))
-	assert.Equal(t, "1.0.2-1.2.3", result.Value(pattern.Variable("version")))
-	assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
+		assert.NotNil(t, result)
+		assert.Equal(t, p.Package, result.Value(pattern.Variable("package")))
+		assert.Equal(t, p.Version, result.Value(pattern.Variable("version")))
+		assert.Equal(t, "tgz", result.Value(pattern.Variable("format")))
+	}
 }
 
 func Test_Npm_Pat_AllVariables(t *testing.T) {

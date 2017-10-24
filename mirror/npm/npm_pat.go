@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"goji.io"
 	"goji.io/pattern"
@@ -17,7 +18,7 @@ import (
 
 func NewArchivePat(code string) goji.Pattern {
 	return &PackagePat{
-		Pattern: regexp.MustCompile(fmt.Sprintf(`\/npm\/%s\/([\w\d\.-]+)\/-\/(.*)\.(tgz)`, code)),
+		Pattern: regexp.MustCompile(fmt.Sprintf(`\/npm\/%s\/((@([\w\d.-]+)\/|)([@\w\d\.-]+))\/-\/(.*)\.(tgz)`, code)),
 	}
 }
 
@@ -26,14 +27,17 @@ type PackagePat struct {
 }
 
 func (pp *PackagePat) Match(ctx context.Context, r *http.Request) context.Context {
-	if results := pp.Pattern.FindStringSubmatch(r.URL.Path); len(results) == 0 {
-		return nil
-	} else {
-		name := results[1]
-		version := results[2][len(name)+1 : len(results[2])]
+	var results []string
 
-		return &packagePatMatch{ctx, name, version, "tgz"}
+	if results = pp.Pattern.FindStringSubmatch(r.URL.Path); len(results) == 0 {
+		return nil
 	}
+
+	name := strings.Replace(results[1], "/", "%2f", -1)
+	version := results[5][(len(results[4]) + 1):]
+
+	return &packagePatMatch{ctx, name, version, "tgz"}
+
 }
 
 type packagePatMatch struct {
