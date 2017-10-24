@@ -5,3 +5,4 @@ gui/node_modules
 build
 assets/bindata.go
 vendor
+var/

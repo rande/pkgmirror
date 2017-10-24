@@ -1,0 +1,43 @@
+DataDir = "./var/data"
+CacheDir = "./var/cache"
+PublicServer = "http://localhost:8000"
+InternalServer = ":8000"
+LogDir = "./var/logs"
+LogLevel = "debug"
+
+[Composer]
+    [Composer.packagist]
+    Server = "https://packagist.org"
+    Enabled = true
+    Icon = "https://getcomposer.org/img/logo-composer-transparent.png"
+
+[Npm]
+    [Npm.npm]
+    Server = "https://registry.npmjs.org"
+    Enabled = true
+    Icon = "https://cldup.com/Rg6WLgqccB.svg"
+
+[Bower]
+    [Bower.bower]
+    Server = "https://bower.herokuapp.com"
+    Enabled = true
+    Icon = "https://bower.io/img/bower-logo.svg"
+
+[Static]
+    [Static.drupal]
+    Enabled = false
+    Server = "https://ftp.drupal.org/files/projects"
+    Icon = "https://www.drupal.org/files/druplicon-small.png"
+
+[Git]
+    [Git.github]
+    Server = "github.com"
+    Clone = "git@github.com:{path}"
+    Enabled = false
+    Icon = "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png"
+
+    [Git.drupal]
+    Server = "drupal.org"
+    Clone = "https://git.drupal.org/{path}"
+    Enabled = false
+    Icon = "https://www.drupal.org/files/druplicon-small.png"
