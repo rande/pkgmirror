@@ -396,7 +396,14 @@ func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 	vaultKey := fmt.Sprintf("%s/%s", pkg, version)
 
 	if !ns.Vault.Has(vaultKey) {
-		url := fmt.Sprintf("%s/%s/-/%s-%s.tgz", ns.Config.SourceServer, pkg, pkg, version)
+		var url string
+
+		if pkg[0] == '@' { // scoped package
+			subNames := strings.Split(pkg, "%2f")
+			url = fmt.Sprintf("%s/%s/%s/-/%s-%s.tgz", ns.Config.SourceServer, subNames[0], subNames[1], subNames[1], version)
+		} else {
+			url = fmt.Sprintf("%s/%s/-/%s-%s.tgz", ns.Config.SourceServer, pkg, pkg, version)
+		}
 
 		logger.WithField("url", url).Info("Create vault entry")
 
