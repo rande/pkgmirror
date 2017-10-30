@@ -37,6 +37,7 @@ func Test_Npm_Pat(t *testing.T) {
 		{"/npm/npm/aspace/-/aspace-0.0.1.tgz", "aspace", "0.0.1"},
 		{"/npm/npm/@type%2fnode/-/node-6.0.90.tgz", "@type%2fnode", "6.0.90"},
 		{"/npm/npm/dateformat/-/dateformat-1.0.2-1.2.3.tgz", "dateformat", "1.0.2-1.2.3"},
+		{"/npm/npm/@storybook%2freact/-/react-3.0.0.tgz", "@storybook%2freact", "3.0.0"},
 	}
 
 	matcher := NewArchivePat("npm")

@@ -10,25 +10,21 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/rande/pkgmirror/mirror/npm"
 	"github.com/rande/pkgmirror/test"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Npm_Get_Package(t *testing.T) {
+func Test_Npm_Get_Standard_Package(t *testing.T) {
 
 	optin := &test.TestOptin{Npm: true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
-		res, err := test.RunRequest("GET", fmt.Sprintf("%s/npm/angular-oauth", args.MockedServer.URL))
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/npm/angular-oauth", args.MockedServer.URL)) // Mocked server
 
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
-
-		// wait for the synchro to complete
-		time.Sleep(1 * time.Second)
 
 		res, err = test.RunRequest("GET", fmt.Sprintf("%s/npm/npm/non-existant-package", args.TestServer.URL))
 		assert.NoError(t, err)
@@ -52,5 +48,19 @@ func Test_Npm_Get_Package(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 200, res.StatusCode)
 		assert.Equal(t, 19497, len(res.GetBody()))
+	})
+}
+func Test_Npm_Download_Scoped_Package_Archive(t *testing.T) {
+
+	optin := &test.TestOptin{Npm: true}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		url := strings.Replace("http://localhost:8000/npm/npm/@types/react/-/react-0.0.0.tgz", "http://localhost:8000", args.TestServer.URL, -1)
+
+		res, err := test.RunRequest("GET", url)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 200, res.StatusCode)
+		assert.Equal(t, 25276, len(res.GetBody()))
 	})
 }
