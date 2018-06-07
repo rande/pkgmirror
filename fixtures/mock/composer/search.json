@@ -1,0 +1,61 @@
+{
+    "results": [
+        {
+            "name": "monolog/monolog",
+            "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
+            "url": "https://packagist.org/packages/monolog/monolog",
+            "repository": "https://github.com/Seldaek/monolog",
+            "downloads": 97217074,
+            "favers": 10908
+        },
+        {
+            "name": "oasis/logging",
+            "description": "Wrapper of monolog/monolog. Should be easier to use/configure than monolog",
+            "url": "https://packagist.org/packages/oasis/logging",
+            "repository": "https://github.com/oasmobile/php-logging",
+            "downloads": 4987,
+            "favers": 1
+        },
+        {
+            "name": "weew/app-monolog",
+            "description": "Integration of the monolog/monolog package into weew/app package.",
+            "url": "https://packagist.org/packages/weew/app-monolog",
+            "repository": "https://github.com/weew/app-monolog",
+            "downloads": 69,
+            "favers": 0
+        },
+        {
+            "name": "weew/app-error-handler-monolog",
+            "description": "Integrates monolog/monolog logger into weew/app-error-handler.",
+            "url": "https://packagist.org/packages/weew/app-error-handler-monolog",
+            "repository": "https://github.com/weew/app-error-handler-monolog",
+            "downloads": 61,
+            "favers": 0
+        },
+        {
+            "name": "thecodingmachine/monolog-universal-service-provider",
+            "description": "Cross-framework module for monolog/monolog",
+            "url": "https://packagist.org/packages/thecodingmachine/monolog-universal-service-provider",
+            "repository": "https://github.com/thecodingmachine/monolog-universal-service-provider",
+            "downloads": 2,
+            "favers": 0
+        },
+        {
+            "name": "bluebik/logger",
+            "description": "Log seperate folder by level build on monolog/monolog",
+            "url": "https://packagist.org/packages/bluebik/logger",
+            "repository": "https://github.com/bluebik/laravel-logger",
+            "downloads": 3,
+            "favers": 0
+        },
+        {
+            "name": "mongologue/mongologue",
+            "description": "A Light Weight Micro Blogger using MongoDB",
+            "url": "https://packagist.org/packages/mongologue/mongologue",
+            "repository": "https://github.com/biswojit19/monologue",
+            "downloads": 6,
+            "favers": 0
+        }
+    ],
+    "total": 7
+}
