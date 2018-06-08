@@ -150,4 +150,22 @@ func ConfigureHttp(name string, conf *pkgmirror.ComposerConfig, app *goapp.App) 
 			}
 		}
 	})
+
+	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s/search.json", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		data, err := composerService.SearchPackage(r)
+
+		if err != nil {
+			pkgmirror.SendWithHttpCode(w, 404, err.Error())
+
+			return
+		}
+
+		if gzip, err := pkgmirror.Compress(data); err != nil {
+			pkgmirror.SendWithHttpCode(w, 500, err.Error())
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Write(gzip)
+		}
+	})
 }
