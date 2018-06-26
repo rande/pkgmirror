@@ -19,7 +19,7 @@ LogLevel = "debug"
 
 [Bower]
     [Bower.bower]
-    Server = "https://bower.herokuapp.com"
+    Server = "https://registry.bower.io"
     Enabled = true
     Icon = "https://bower.io/img/bower-logo.svg"
 
