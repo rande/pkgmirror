@@ -10,6 +10,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
@@ -526,6 +528,24 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 
 		return nil
 	})
+}
+
+func (ps *ComposerService) SearchPackage(r *http.Request) ([]byte, error) {
+	ps.Logger.Info(fmt.Sprintf("Searching for %s", r.URL.RawQuery))
+
+	resp, err := http.Get(fmt.Sprintf("%s/search.json?%s", ps.Config.SourceServer, r.URL.RawQuery))
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if data, err := ioutil.ReadAll(resp.Body); err != nil {
+		return nil, err
+	} else {
+		return data, nil
+	}
 }
 
 func (ps *ComposerService) CleanPackages() error {

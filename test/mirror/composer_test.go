@@ -107,3 +107,23 @@ func Test_Update_Unknown_Package(t *testing.T) {
 		assert.Equal(t, "No value available", v["message"])
 	})
 }
+
+func Test_Search_Package(t *testing.T) {
+	optin := &test.TestOptin{
+		Composer: true,
+	}
+
+	test.RunHttpTest(t, optin, func(args *test.Arguments) {
+		time.Sleep(1 * time.Second)
+
+		res, err := test.RunRequest("GET", fmt.Sprintf("%s/composer/packagist/search.json?q=monolog/monolog", args.TestServer.URL))
+
+		assert.NoError(t, err)
+		assert.NotEqual(t, 404, res.StatusCode)
+
+		v := make(map[string][]map[string]interface{})
+		json.Unmarshal(res.GetBody(), &v)
+
+		assert.Equal(t, "monolog/monolog", v["results"][0]["name"])
+	})
+}
