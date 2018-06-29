@@ -80,11 +80,11 @@ If the ``Clone`` settings is not set, you need to manually add git repository:
 Bower
 -----
 
-To add a new repository, for instance, https://bower.herokuapp.com:
+To add a new repository, for instance, https://registry.bower.io:
 
     [Bower]
         [Bower.bower]
-        Server = "https://bower.herokuapp.com"
+        Server = "https://registry.bower.io"
         Enabled = true
         Icon = "https://bower.io/img/bower-logo.svg"
         

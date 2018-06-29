@@ -4,7 +4,7 @@ Bower mirroring
 Mirroring Workflow
 ------------------
 
-1. Load https://bower.herokuapp.com/packages json. It is a 4.3MB json file with all informations.
+1. Load https://registry.bower.io/packages json. It is a 4.3MB json file with all informations.
 
         [
             {

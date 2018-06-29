@@ -28,7 +28,7 @@ type BowerConfig struct {
 func NewBowerService() *BowerService {
 	return &BowerService{
 		Config: &BowerConfig{
-			SourceServer: "https://bower.herokuapp.org",
+			SourceServer: "https://registry.bower.io",
 			Code:         []byte("bower"),
 			Path:         "./data/bower",
 		},
