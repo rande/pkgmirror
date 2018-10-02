@@ -25,6 +25,7 @@ import (
 )
 
 var (
+	DRUPAL_ARCHIVE    = regexp.MustCompile(`https:\/\/ftp.drupal.org\/files\/projects/(.*)\.zip`)
 	BITBUCKET_ARCHIVE = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w\.\d-]+)\/([\w-\.\d]+)\/get\/([\w]+)\.zip`)
 	GITHUB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/api\.([\w-\.]+)\/repos\/([\w\.\d-]+)\/([\w\.\d-]+)\/zipball\/([\w]+)`)
 	GITLAB_ARCHIVE    = regexp.MustCompile(`http(s|):\/\/([\w-\.]+)\/([\w-\.\d]+)\/([\w-\.\d]+)\/repository\/archive.zip\?ref=([\w]+)`)
@@ -335,6 +336,10 @@ func GitRewriteArchive(publicServer, path string) string {
 
 	if results := GITLAB_ARCHIVE.FindStringSubmatch(path); len(results) == 6 {
 		return fmt.Sprintf("%s/git/%s/%s/%s/%s.zip", publicServer, results[2], results[3], results[4], results[5])
+	}
+
+	if results := DRUPAL_ARCHIVE.FindStringSubmatch(path); len(results) == 2 {
+		return fmt.Sprintf("%s/static/drupal/%s.zip", publicServer, results[1])
 	}
 
 	return publicServer

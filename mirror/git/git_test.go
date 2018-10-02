@@ -73,3 +73,11 @@ func Test_Repository_Rewrite_SVN(t *testing.T) {
 		assert.Equal(t, v.Expected, GitRewriteRepository(publicServer, v.Value))
 	}
 }
+
+func Test_Drupal_Archive(t *testing.T) {
+	publicServer := "https://mirrors.localhost"
+
+	path := GitRewriteArchive(publicServer, "https://ftp.drupal.org/files/projects/ctools-8.x-3.0.zip")
+	assert.Equal(t, "https://mirrors.localhost/static/drupal/ctools-8.x-3.0.zip", path)
+
+}

@@ -74,5 +74,5 @@ Mirroring workflow
 Storage
 -------
 
-The storage layer uses [boltdb](https://github.com/boltdb/bolt). A packagist.org mirror is about 250MB on disk, 
+The storage layer uses [boltdb](https://github.com/boltdb/bolt). A packagist.org mirror is about 512MB on disk, 
 the file is located in the ``PATH/composer/packagist.db``. 

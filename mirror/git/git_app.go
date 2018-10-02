@@ -104,6 +104,13 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						continue
 					}
 
+					logger.WithFields(log.Fields{
+						"request.path": r.URL.Path,
+						"path":         path,
+						"handler":      "git",
+						"code":         name,
+					}).Debug("Check auto cloning action")
+
 					if len(r.URL.Path) > len(path) && path == r.URL.Path[0:len(path)] {
 						//found match
 						s := app.Get(fmt.Sprintf("pkgmirror.git.%s", name)).(*GitService)

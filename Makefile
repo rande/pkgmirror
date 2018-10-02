@@ -46,7 +46,7 @@ test-backend:     ## Run backend tests
 test-frontend:      ## Run frontend tests
 	exit 0
 
-test: test-backend test-front
+test: test-backend
 
 run: bin-dev      ## Run server
 	go run -race cli/main.go run -file ./pkgmirror.toml -log-level=info
@@ -69,10 +69,10 @@ update:  ## Update dependencies
 	glide update
 
 bin-dev:                 ## Generate bin dev assets file
-	go-bindata -dev -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
+	`go env GOPATH`/bin/go-bindata -dev -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
 
 bin: assets                 ## Generate bin assets file
-	go-bindata -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
+	`go env GOPATH`/bin/go-bindata -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
 
 assets:  ## build assets
 	rm -rf gui/build/*

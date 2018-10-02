@@ -30,7 +30,7 @@ func Test_Composer_Get_PackagesJson(t *testing.T) {
 	})
 }
 
-func Test_Composer_Redirect(t *testing.T) {
+func Test_Composer_Redirect_Package(t *testing.T) {
 	optin := &test.TestOptin{Composer: true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {
@@ -46,6 +46,10 @@ func Test_Composer_Redirect(t *testing.T) {
 		err = json.Unmarshal(res.GetBody(), v)
 
 		assert.NoError(t, err)
+
+		if err != nil {
+			return
+		}
 
 		assert.Equal(t, "symfony/framework-standard-edition", v.Packages["symfony/framework-standard-edition"]["2.1.x-dev"].Name)
 	})
