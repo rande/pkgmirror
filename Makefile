@@ -1,7 +1,7 @@
 .PHONY: help format test install update build release assets
 
-GO_BINDATA_PREFIX = $(shell pwd)/gui/build
-GO_BINDATA_PATHS = $(shell pwd)/gui/build
+GO_BINDATA_PREFIX = $(shell pwd)/gui/dist
+GO_BINDATA_PATHS = $(shell pwd)/gui/dist
 GO_BINDATA_IGNORE = "(.*)\.(go|DS_Store)"
 GO_BINDATA_OUTPUT = $(shell pwd)/assets/bindata.go
 GO_BINDATA_PACKAGE = assets
@@ -15,13 +15,16 @@ SHA1=$(shell git rev-parse HEAD)
 help:     ## Display this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+
+format: format-frontend format-backend
+	echo "Done!"
+
 format-frontend:  ## Format code to respect CS
-	./gui/node_modules/.bin/eslint --fix -c ./gui/.eslintrc $(JS_FILES)
+	cd gui && yarn prettier --single-quote --trailing-comma es5 --write "src/**/*.js"
 
 format-backend:  ## Format code to respect CS
-	goimports -w $(GO_FILES)
+	`go env GOPATH`/bin/goimports -w $(GO_FILES)
 	gofmt -l -w -s $(GO_FILES)
-	go fix $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
 coverage-backend: ## run coverage tests
@@ -75,12 +78,12 @@ bin: assets                 ## Generate bin assets file
 	`go env GOPATH`/bin/go-bindata -o $(GO_BINDATA_OUTPUT) -prefix $(GO_BINDATA_PREFIX) -pkg $(GO_BINDATA_PACKAGE) -ignore $(GO_BINDATA_IGNORE) $(GO_BINDATA_PATHS)
 
 assets:  ## build assets
-	rm -rf gui/build/*
-	cd gui && NODE_ENV=production node_modules/.bin/webpack --config webpack-production.config.js --progress --colors
+	rm -rf gui/dist/*
+	cd gui && yarn parcel build src/static/index.html --no-source-maps
 
 watch:  ## build assets
 	rm -rf gui/build/*
-	cd gui && node_modules/.bin/webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors
+	cd gui && yarn parcel watch src/static/index.html
 
 build: bin ## build binaries
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.RefLog=$(SHA1) -X main.Version=$(TRAVIS_TAG) -s -w" -o build/darwin-amd64-pkgmirror cli/main.go

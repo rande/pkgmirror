@@ -3,27 +3,26 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-import { connect } from 'react-redux';
+import { connect } from 'react-redux'
 
-import CardMirror from '../../components/CardMirror';
+import CardMirror from '../../components/CardMirror'
 
 const mapStateToProps = (state, ownProps) => {
-    let mirror = {};
+    let mirror = {}
 
-    state.mirrorApp.mirrors.every((v) => {
+    state.mirrorApp.mirrors.every(v => {
         if (ownProps.params.id === v.Id) {
-            mirror = v;
+            mirror = v
 
-            return false;
+            return false
         }
 
-        return true;
-    });
+        return true
+    })
 
     return {
         mirror,
-    };
-};
+    }
+}
 
-export default connect(mapStateToProps)(CardMirror);
-
+export default connect(mapStateToProps)(CardMirror)
