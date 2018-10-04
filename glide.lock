@@ -1,5 +1,5 @@
-hash: 4ee4147adf0274612adec2a28c8cd078bf306544fdbdc9ea8ecc1e2279ca0dd1
-updated: 2016-10-17T23:37:28.066913991+02:00
+hash: be9a945aa6f914e7fa9102bac9afb55efcfe22940538e573a052867f0929c9bb
+updated: 2018-10-04T11:41:40.000507+02:00
 imports:
 - name: github.com/AaronO/go-git-http
   version: a8b8273a5ac1dbfb412cd2b70382badb1aceeadb
@@ -40,9 +40,9 @@ imports:
 - name: github.com/bgentry/speakeasy
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
 - name: github.com/boltdb/bolt
-  version: 583e8937c61f1af6513608ccc75c97b6abdf4ff9
+  version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
 - name: github.com/BurntSushi/toml
-  version: bbd5bb678321a0d6e58f1099321dfa73391c1b6f
+  version: 3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
@@ -68,16 +68,16 @@ imports:
   subpackages:
   - core/vault
 - name: github.com/Sirupsen/logrus
-  version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert
   - mock
 - name: goji.io
-  version: e1741450ad80d2837134e32ac7b1d0a7a2b11c51
+  version: bc2e9e7dc2769805d1b6ce4dc48ec23a03ae82ec
   subpackages:
   - internal
   - pat
