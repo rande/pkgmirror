@@ -1,3 +1,4 @@
+.DS_Store
 fixtures/project/vendor
 fixtures/project/composer.lock
 fixtures/project/node_modules

@@ -30,6 +30,15 @@ func Test_Compress_EmptyData(t *testing.T) {
 	assert.True(t, len(c) > 0)
 }
 
+func Test_Decompress(t *testing.T) {
+	c, err := Compress([]byte("Hello"))
+	assert.NoError(t, err)
+
+	d, err := Decompress(c)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("Hello"), d)
+}
+
 func Test_WorkerManager_WorkerNumber(t *testing.T) {
 	// should be called 10 times
 	var cpt int32

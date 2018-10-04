@@ -21,10 +21,11 @@ import (
 )
 
 type ComposerConfig struct {
-	SourceServer string
-	PublicServer string
-	Code         []byte
-	Path         string
+	SourceServer     string
+	PublicServer     string
+	BasePublicServer string
+	Code             []byte
+	Path             string
 }
 
 func NewComposerService() *ComposerService {
@@ -38,11 +39,26 @@ func NewComposerService() *ComposerService {
 }
 
 type ComposerService struct {
-	DB        *bolt.DB
-	Config    *ComposerConfig
-	Logger    *log.Entry
-	lock      bool
-	StateChan chan pkgmirror.State
+	DB           *bolt.DB
+	Config       *ComposerConfig
+	Logger       *log.Entry
+	lock         bool
+	StateChan    chan pkgmirror.State
+	ProvidersURL string
+}
+
+func (ps *ComposerService) getPackageUrl(pi *PackageInformation) string {
+	return fmt.Sprintf("%s%s", ps.Config.BasePublicServer, ps.getPackageKey(pi))
+}
+
+func (ps *ComposerService) getPackageKey(pi *PackageInformation) string {
+	// /8/%package%$%hash%.json
+	var key = ps.ProvidersURL
+
+	key = strings.Replace(key, "%package%", pi.Package, -1)
+	key = strings.Replace(key, "%hash%", pi.HashSource, -1)
+
+	return key
 }
 
 func (ps *ComposerService) Init(app *goapp.App) (err error) {
@@ -122,19 +138,17 @@ func (ps *ComposerService) SyncPackages() error {
 
 			p := &PackageResult{}
 
-			url := fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey())
-
 			logger.WithFields(log.Fields{
 				"package":     pkg.Package,
 				"source_hash": pkg.HashSource,
 				"worker":      id,
-				"url":         url,
+				"url":         pkg.Url,
 			}).Debug("Load loading package information")
 
-			if err := pkgmirror.LoadRemoteStruct(url, p); err != nil {
+			if err := pkgmirror.LoadRemoteStruct(pkg.Url, p); err != nil {
 				logger.WithFields(log.Fields{
 					"package": pkg.Package,
-					"url":     url,
+					"url":     pkg.Url,
 					"error":   err.Error(),
 				}).Error("Error loading package information")
 
@@ -155,7 +169,7 @@ func (ps *ComposerService) SyncPackages() error {
 
 	dm.Start()
 
-	pr := &PackagesResult{}
+	packagesResult := &PackagesResult{}
 
 	logger.Info("Loading packages.json")
 
@@ -164,7 +178,7 @@ func (ps *ComposerService) SyncPackages() error {
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
 
-	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), pr); err != nil {
+	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages.json", ps.Config.SourceServer), packagesResult); err != nil {
 		logger.WithFields(log.Fields{
 			"path":  "packages.json",
 			"error": err.Error(),
@@ -173,12 +187,14 @@ func (ps *ComposerService) SyncPackages() error {
 		return err // an error occurs avoid empty file
 	}
 
-	for provider, sha := range pr.ProviderIncludes {
+	ps.ProvidersURL = packagesResult.ProvidersURL
+
+	for provider, sha := range packagesResult.ProviderIncludes {
 		path := strings.Replace(provider, "%hash%", sha.Sha256, -1)
 
 		logger := logger.WithFields(log.Fields{
-			"provider": provider,
-			"hash":     sha.Sha256,
+			"provider":      provider,
+			"provider_hash": sha.Sha256,
 		})
 
 		logger.Info("Loading provider information")
@@ -210,13 +226,24 @@ func (ps *ComposerService) SyncPackages() error {
 
 				p.Exist = false
 
-				if err := json.Unmarshal(data, &p); err == nil {
+				if err := pkgmirror.Unmarshal(data, &p); err != nil && len(data) > 0 {
+					logger.WithFields(log.Fields{
+						"error": err,
+						"data":  data,
+					}).Error("Unable to unmarshal package information")
+				} else {
 					p.Exist = p.HashSource == sha.Sha256
 				}
 
 				p.HashSource = sha.Sha256
 
 				return nil
+			})
+
+			p.Url = ps.getPackageUrl(&p)
+
+			logger = logger.WithFields(log.Fields{
+				"package_hash": p.HashSource,
 			})
 
 			if !p.Exist {
@@ -271,21 +298,29 @@ func (ps *ComposerService) Get(key string) ([]byte, error) {
 func (ps *ComposerService) GetPackage(key string) (*PackageInformation, error) {
 	pi := &PackageInformation{}
 
-	ps.Logger.WithFields(log.Fields{
-		"action": "Get",
+	logger := ps.Logger.WithFields(log.Fields{
+		"action": "GetPackage",
 		"key":    key,
-	}).Info("Get package data")
+	})
+
+	logger.Info("Get package data")
 
 	err := ps.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
 
-		raw := b.Get([]byte(key))
+		data := b.Get([]byte(key))
 
-		if len(raw) == 0 {
+		if len(data) == 0 {
 			return pkgmirror.EmptyKeyError
-		}
+		} else if err := pkgmirror.Unmarshal(data, pi); err != nil {
+			logger.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Error while unmarshalling package")
 
-		return json.Unmarshal(raw, pi)
+			return err
+		} else {
+			return nil
+		}
 	})
 
 	return pi, err
@@ -325,17 +360,26 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 		return err // an error occurs avoid empty file
 	}
 
-	logger.Info("packages.json loaded")
+	logger.Debug("packages.json loaded")
 
 	providers := map[string]*ProvidersResult{}
 
 	for provider, sha := range pkgResult.ProviderIncludes {
 		pr := &ProvidersResult{}
 
-		logger.WithField("provider", provider).Info("Load provider")
+		url := fmt.Sprintf("%s/%s", ps.Config.SourceServer, strings.Replace(provider, "%hash%", sha.Sha256, -1))
 
-		if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ps.Config.SourceServer, strings.Replace(provider, "%hash%", sha.Sha256, -1)), pr); err != nil {
-			ps.Logger.WithField("error", err.Error()).Error("Error loading provider information")
+		logger.WithFields(log.Fields{
+			"provider": provider,
+			"url":      url,
+		}).Debug("Load provider")
+
+		if err := pkgmirror.LoadRemoteStruct(url, pr); err != nil {
+			ps.Logger.WithFields(log.Fields{
+				"provider": provider,
+				"url":      url,
+				"error":    err,
+			}).Error("Error loading provider information")
 		}
 
 		providers[provider] = pr
@@ -347,7 +391,13 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 				data := b.Get([]byte(name))
 
 				pi := &PackageInformation{}
-				if err := json.Unmarshal(data, pi); err != nil {
+				if err := pkgmirror.Unmarshal(data, pi); err != nil {
+					logger.WithFields(log.Fields{
+						"error": err.Error(),
+						"data":  string(data),
+						"name":  name,
+					}).Error("Error while unmarshalling provider package")
+
 					return err
 				}
 
@@ -360,7 +410,7 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 			})
 		}
 
-		// save provider file
+		// save provider file, cannot compress *yet* as we need the sha1 from the uncompressed json file.
 		data, err := json.Marshal(providers[provider])
 
 		if err != nil {
@@ -381,7 +431,16 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 
 		ps.DB.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket(ps.Config.Code)
-			b.Put([]byte(path), data)
+
+			if data, err := pkgmirror.Marshal(providers[provider]); err != nil {
+				logger.WithError(err).Error("Unable to marshal provider data")
+
+				return err
+			} else if err := b.Put([]byte(path), data); err != nil {
+				logger.WithError(err).Error("Unable to store provider data")
+
+				return err
+			}
 
 			ps.Logger.WithFields(log.Fields{
 				"provider": provider,
@@ -393,14 +452,14 @@ func (ps *ComposerService) UpdateEntryPoints() error {
 	}
 
 	//pr.ProviderIncludes = providerIncludes
-	pkgResult.ProvidersURL = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.ProvidersURL)
-	pkgResult.Notify = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.Notify)
-	pkgResult.NotifyBatch = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.NotifyBatch)
-	pkgResult.Search = fmt.Sprintf("/composer/%s%s", ps.Config.Code, pkgResult.Search)
+	pkgResult.ProvidersURL = fmt.Sprintf("/composer/%s/p/%%package%%$%%hash%%.json", ps.Config.Code)
+	pkgResult.Notify = fmt.Sprintf("/composer/%s/downloads/%%package%%", ps.Config.Code)
+	pkgResult.NotifyBatch = fmt.Sprintf("/composer/%s/downloads", ps.Config.Code)
+	pkgResult.Search = fmt.Sprintf("/composer/%s/search.json?q=%%query%%&type=%%type%%", ps.Config.Code)
 
 	ps.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
-		data, _ := json.Marshal(pkgResult)
+		data, _ := pkgmirror.Marshal(pkgResult)
 		b.Put([]byte("packages.json"), data)
 
 		ps.Logger.Info("Save packages.json")
@@ -432,43 +491,46 @@ func (ps *ComposerService) UpdatePackage(name string) error {
 		Server:  ps.Config.SourceServer,
 	}
 
-	ps.Logger.WithFields(log.Fields{
+	logger := ps.Logger.WithFields(log.Fields{
 		"package": pkg.Package,
 		"action":  "UpdatePackage",
-	}).Info("Explicit reload package information")
+	})
 
-	err := ps.DB.View(func(tx *bolt.Tx) error {
+	logger.Info("Explicit reload package information")
+
+	if err := ps.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ps.Config.Code)
 		data := b.Get([]byte(pkg.Package))
 
 		if len(data) == 0 {
 			return pkgmirror.EmptyKeyError
-		}
-
-		if err := json.Unmarshal(data, pkg); err == nil {
+		} else if err := pkgmirror.Unmarshal(data, pkg); err == nil {
 			return err
 		}
 
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return err // unknown package
 	}
 
+	pkg.Url = ps.getPackageUrl(pkg)
+
 	pkg.PackageResult = PackageResult{}
 
-	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/p/%s", ps.Config.SourceServer, pkg.GetSourceKey()), &pkg.PackageResult); err != nil {
-		ps.Logger.WithFields(log.Fields{
-			"package": pkg.Package,
-			"error":   err.Error(),
-			"action":  "UpdatePackage",
+	if err := pkgmirror.LoadRemoteStruct(pkg.Url, &pkg.PackageResult); err != nil {
+		logger.WithFields(log.Fields{
+			"error": err.Error(),
+			"url":   pkg.Url,
 		}).Error("Error loading package information")
 
 		return err
 	}
 
 	if err := ps.savePackage(pkg); err != nil {
+		logger.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Unable to save package")
+
 		return err
 	}
 
@@ -501,27 +563,22 @@ func (ps *ComposerService) savePackage(pkg *PackageInformation) error {
 		sha := sha256.Sum256(data)
 		pkg.HashTarget = hex.EncodeToString(sha[:])
 
-		data, err := pkgmirror.Compress(data)
-
-		if err != nil {
-			logger.WithError(err).Error("Unable to compress data")
+		if data, err := pkgmirror.Compress(data); err != nil {
+			logger.WithError(err).Error("Unable to compress package data")
 
 			return err
-		}
-
-		// store the path
-		if err := b.Put([]byte(pkg.GetTargetKey()), data); err != nil {
+		} else if err := b.Put([]byte(pkg.GetTargetKey()), data); err != nil {
 			logger.WithError(err).Error("Error updating/creating definition")
 
 			return err
-		} else {
-			data, _ := json.Marshal(pkg)
+		} else if data, err := pkgmirror.Marshal(pkg); err != nil {
+			logger.WithError(err).Error("Unable to marshal package definition data")
 
-			if err := b.Put([]byte(pkg.Package), data); err != nil {
-				logger.WithError(err).Error("Error updating/creating hash definition")
+			return err
+		} else if err := b.Put([]byte(pkg.Package), data); err != nil {
+			logger.WithError(err).Error("Error updating/creating hash definition")
 
-				return err
-			}
+			return err
 		}
 
 		return nil
@@ -551,22 +608,40 @@ func (ps *ComposerService) CleanPackages() error {
 			}).Error("Error loading packages.json")
 
 			return err // an error occurs avoid empty file
-		} else {
-			json.Unmarshal(data, pkgResult)
+		} else if err := pkgmirror.Unmarshal(data, pkgResult); err != nil {
+			logger.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Error while decompressing packages.json")
+
+			return err
 		}
 
+		// Sample iteration over key
+		//  - drupal/a11n_code_example
+		//  - drupal/a11n_code_example$e3147979055c65820731c0ebae9a9f989f7d8a52bb3dbb036e2bdc393127528b
+		//  - drupal/a11n_code_form
+		//  - drupal/a11n_code_form$86bd5df758fbfa094e356700d0d645bc41707e57b1ee5ac471e54386687a53e7
+		//  - drupal/a11n_code_rest
+		//  - drupal/a11n_code_rest$48329b3394c64d16784baebd626797454475a560b753f29fa5c64b9fa38795fc
+		//  - drupal/a12_best_bets
+		//  - drupal/a12_best_bets$6037a7856189bf0e9b4d22a44b8587f299ca483fa31585165c52bab221050524
+		//  - drupal/a12_connect
+		//  - drupal/a12_connect$a90ba85da88bd35f0e389cc7fbca4126ede378976862d22fbb14c4505436def9
+		//  - drupal/a_hole
 		var pi *PackageInformation
+		var pr *ProvidersResult
 
 		b.ForEach(func(k, v []byte) error {
 			name := string(k)
-			if i := strings.Index(name, "$"); i > 0 {
-
-				if name[0:10] == "p/provider" {
-					// skipping
+			if i := strings.Index(name, "$"); i > 0 { // sha1 package, ie: drupal/a11n_code_example$e3147979055c65820731c0ebae9a9f989f7d8a52bb3dbb036e2bdc393127528b
+				if pr != nil {
+					// iterate over provider list from packages.json
+					// and remove provide with no reference
 					for provider, sha := range pkgResult.ProviderIncludes {
+						// find the provider but the sha1 does not match (old one) delete
 						if name[0:i+1] == provider[0:i+1] && name[i+1:len(name)-5] != sha.Sha256 {
 							logger.WithFields(log.Fields{
-								"package":      provider[0:i],
+								"provider":     pr.Code,
 								"hash_target":  sha.Sha256,
 								"hash_current": name[i+1 : len(name)-5],
 							}).Info("Delete provider definition")
@@ -574,12 +649,10 @@ func (ps *ComposerService) CleanPackages() error {
 							b.Delete(k)
 						}
 					}
-
-				} else if name[0:i] == pi.Package {
-
-					if pi.HashTarget != name[i+1:] {
+				} else if pi != nil {
+					if name[0:i] == pi.Package && pi.HashTarget != name[i+1:] {
 						logger.WithFields(log.Fields{
-							"package":      name,
+							"package":      pi.Package,
 							"hash_target":  pi.HashTarget,
 							"hash_current": name[i+1:],
 						}).Info("Delete package definition")
@@ -587,12 +660,32 @@ func (ps *ComposerService) CleanPackages() error {
 						b.Delete(k)
 					}
 				} else {
-					logger.WithField("package", name).Error("Orphan reference")
+					logger.WithField("key", name).Error("Orphan reference")
 				}
-			} else {
+			} else { // load the current active package or provider, ie: drupal/a11n_code_example
+				pr = &ProvidersResult{}
 				pi = &PackageInformation{}
 
-				json.Unmarshal(v, pi)
+				pkgmirror.Unmarshal(v, pi)
+				if len(pi.Package) > 0 {
+					// logger.WithField("package", name).Debug("Unmarshal PackageInformation")
+					pr = nil
+
+					return nil
+				}
+
+				pkgmirror.Unmarshal(v, pr)
+				if len(pr.Code) > 0 {
+					logger.WithField("provider", name).Debug("Unmarshal ProvidersResult")
+					pi = nil
+
+					return nil
+				}
+
+				logger.WithField("key", name).Debug("Unable to unmarshal data")
+
+				pi = nil
+				pr = nil
 			}
 
 			return nil

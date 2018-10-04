@@ -20,20 +20,34 @@ To add a new repository, for instance, the official one:
         Enabled = true
         Icon = "https://getcomposer.org/img/logo-composer-transparent.png"
 
+        [Composer.drupal8]
+        Server = "https://packages.drupal.org/8"
+        Enabled = true
+        Icon = "https://www.drupal.org/files/druplicon-small.png"
+
+        [Composer.drupal7]
+        Server = "https://packages.drupal.org/7"
+        Enabled = true
+        Icon = "https://www.drupal.org/files/druplicon-small.png"
+
+
 Next, you need to declare the mirror in your ``composer.json`` file:
 
     {
         "repositories":[
             { "packagist": false },
             { "type": "composer", "url": "https://localhost/composer/packagist"}
+            { "type": "composer", "url": "https://localhost/composer/drupal8"}
         ],
-    
         "require": {
             "sonata-project/exporter": "*"
         }
     }
 
 The ``packagist`` key is used here as an example.
+
+
+> You also need to setup `git` and `static` configuration to be able to download assets or clone repository.
 
 Npm
 ---

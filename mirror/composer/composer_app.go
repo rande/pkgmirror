@@ -8,6 +8,8 @@ package composer
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/rande/goapp"
@@ -29,12 +31,20 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 			}
 
 			app.Set(fmt.Sprintf("pkgmirror.composer.%s", name), func(name string, conf *pkgmirror.ComposerConfig) func(app *goapp.App) interface{} {
-
 				return func(app *goapp.App) interface{} {
+
 					s := NewComposerService()
+
+					if u, err := url.Parse(conf.Server); err != nil {
+						panic(err)
+					} else {
+						s.Config.BasePublicServer = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+					}
+
 					s.Config.Path = fmt.Sprintf("%s/composer", config.DataDir)
 					s.Config.PublicServer = config.PublicServer
 					s.Config.SourceServer = conf.Server
+
 					s.Config.Code = []byte(name)
 					s.Logger = logger.WithFields(log.Fields{
 						"handler": "composer",
@@ -79,7 +89,6 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 		}
 
 		l.Run(func(name string) func(app *goapp.App, state *goapp.GoroutineState) error {
-
 			return func(app *goapp.App, state *goapp.GoroutineState) error {
 				s := app.Get(fmt.Sprintf("pkgmirror.composer.%s", name)).(pkgmirror.MirrorService)
 				s.Serve(state)
@@ -90,30 +99,19 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 	}
 }
 
+// http://localhost:8000/composer/drupal8/drupal/provider-2011-2%24e22123ab0815d43cedb1309f7ad7b803127ac9679f7aaa9b281cf768f6806ae2.json
+
 func ConfigureHttp(name string, conf *pkgmirror.ComposerConfig, app *goapp.App) {
 	mux := app.Get("mux").(*goji.Mux)
+	logger := app.Get("logger").(*log.Logger).WithFields(log.Fields{
+		"handler": "composer",
+		"code":    name,
+	})
+
 	composerService := app.Get(fmt.Sprintf("pkgmirror.composer.%s", name)).(*ComposerService)
 
-	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s(/|)", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/composer/%s/packages.json", name), http.StatusMovedPermanently)
-	})
-
-	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s/packages.json", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if data, err := composerService.Get("packages.json"); err != nil {
-			pkgmirror.SendWithHttpCode(w, 500, err.Error())
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
-		}
-	})
-
-	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s/p/:ref.json", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if data, err := composerService.Get(fmt.Sprintf("p/%s.json", pat.Param(ctx, "ref"))); err != nil {
-			pkgmirror.SendWithHttpCode(w, 404, err.Error())
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
-		}
 	})
 
 	mux.HandleFuncC(NewPackagePat(name), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -148,6 +146,45 @@ func ConfigureHttp(name string, conf *pkgmirror.ComposerConfig, app *goapp.App) 
 			case "html":
 				http.Redirect(w, r, fmt.Sprintf("/composer/%s/p/%s.json", name, pi.GetTargetKey()), http.StatusFound)
 			}
+		}
+	})
+
+	baseUrlLen := len(fmt.Sprintf("/composer/%s/", name))
+
+	// catch all for this element (drupal element)
+	mux.HandleFuncC(pat.Get(fmt.Sprintf("/composer/%s/*", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		logger.Debug(r.URL.Path)
+
+		format := "html"
+		url := r.URL.Path[baseUrlLen:]
+		key := url
+		hash := ""
+		ref := ""
+
+		if i := strings.Index(url, "."); i > 0 {
+			format = url[i+1:]
+			key = url[:i]
+		}
+
+		if i := strings.Index(key, "$"); i > 0 {
+			hash = key[i+1:]
+			ref = key[:i]
+		}
+
+		logger.WithFields(log.Fields{
+			"url":    url,
+			"format": format,
+			"key":    key,
+			"ref":    ref,
+			"hash":   hash,
+		}).Debug(url)
+
+		if data, err := composerService.Get(url); err != nil {
+			pkgmirror.SendWithHttpCode(w, 404, err.Error())
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Write(data)
 		}
 	})
 }

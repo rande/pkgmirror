@@ -3,13 +3,23 @@ CacheDir = "./var/cache"
 PublicServer = "http://localhost:8000"
 InternalServer = ":8000"
 LogDir = "./var/logs"
-LogLevel = "debug"
+LogLevel = "info"
 
 [Composer]
     [Composer.packagist]
     Server = "https://packagist.org"
     Enabled = true
     Icon = "https://getcomposer.org/img/logo-composer-transparent.png"
+
+    [Composer.drupal8]
+    Server = "https://packages.drupal.org/8"
+    Enabled = true
+    Icon = "https://www.drupal.org/files/druplicon-small.png"
+
+    [Composer.drupal7]
+    Server = "https://packages.drupal.org/7"
+    Enabled = true
+    Icon = "https://www.drupal.org/files/druplicon-small.png"
 
 [Npm]
     [Npm.npm]
@@ -20,12 +30,12 @@ LogLevel = "debug"
 [Bower]
     [Bower.bower]
     Server = "https://registry.bower.io"
-    Enabled = true
+    Enabled = false
     Icon = "https://bower.io/img/bower-logo.svg"
 
 [Static]
     [Static.drupal]
-    Enabled = false
+    Enabled = true
     Server = "https://ftp.drupal.org/files/projects"
     Icon = "https://www.drupal.org/files/druplicon-small.png"
 
@@ -33,11 +43,11 @@ LogLevel = "debug"
     [Git.github]
     Server = "github.com"
     Clone = "git@github.com:{path}"
-    Enabled = false
+    Enabled = true
     Icon = "https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png"
 
     [Git.drupal]
-    Server = "drupal.org"
+    Server = "git.drupal.org"
     Clone = "https://git.drupal.org/{path}"
-    Enabled = false
+    Enabled = true
     Icon = "https://www.drupal.org/files/druplicon-small.png"

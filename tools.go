@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
@@ -122,19 +123,49 @@ func SendWithHttpCode(res http.ResponseWriter, code int, message string) {
 }
 
 func Compress(data []byte) ([]byte, error) {
-	// compress data for saving bytes ...
-	buf := bytes.NewBuffer([]byte(""))
-	if gz, err := gzip.NewWriterLevel(buf, gzip.BestCompression); err != nil {
+	var buf bytes.Buffer
+
+	if writer, err := gzip.NewWriterLevel(&buf, gzip.BestSpeed); err != nil {
+		return nil, err
+	} else if _, err := writer.Write(data); err != nil {
 		return nil, err
 	} else {
-		if _, err := gz.Write(data); err != nil {
-			return nil, err
-		}
+		writer.Close()
 
-		gz.Close()
+		return buf.Bytes(), nil
 	}
+}
 
-	return buf.Bytes(), nil
+func Decompress(data []byte) ([]byte, error) {
+	if reader, err := gzip.NewReader(bytes.NewBuffer(data)); err != nil {
+		return nil, err
+	} else if data, err := ioutil.ReadAll(reader); err != nil {
+		return nil, err
+	} else if err := reader.Close(); err != nil {
+		return nil, err
+	} else {
+		return data, nil
+	}
+}
+
+func Unmarshal(data []byte, v interface{}) error {
+	if data, err := Decompress(data); err != nil {
+		return err
+	} else if err := json.Unmarshal(data, v); err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+func Marshal(v interface{}) ([]byte, error) {
+	if data, err := json.Marshal(v); err != nil {
+		return nil, err
+	} else if data, err := Compress(data); err != nil {
+		return nil, err
+	} else {
+		return data, nil
+	}
 }
 
 func NewWorkerManager(process int, processCallback FuncProcess) *workerManager {

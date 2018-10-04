@@ -36,11 +36,11 @@ type Package struct {
 	Name              string           `json:"name,omitempty"`
 	Abandoned         *json.RawMessage `json:"abandoned,omitempty"`
 	Description       string           `json:"description,omitempty"`
-	Keywords          []string         `json:"keywords,omitempty"`
+	Keywords          *json.RawMessage `json:"keywords,omitempty"`
 	Homepage          string           `json:"homepage,omitempty"`
 	Version           string           `json:"version,omitempty"`
 	VersionNormalized string           `json:"version_normalized,omitempty"`
-	License           []string         `json:"license,omitempty"`
+	License           *json.RawMessage `json:"license,omitempty"`
 	Bin               []string         `json:"bin,omitempty"`
 	Authors           []struct {
 		Name     string `json:"name"`
@@ -70,7 +70,7 @@ type Package struct {
 	Require    *json.RawMessage `json:"require,omitempty"`
 	RequireDev *json.RawMessage `json:"require-dev,omitempty"`
 	Suggest    *json.RawMessage `json:"suggest,omitempty"`
-	UID        int              `json:"uid,omitempty"`
+	UID        *json.RawMessage `json:"uid,omitempty"`
 }
 
 // used to load the packages.json file
@@ -85,10 +85,7 @@ type PackageInformation struct {
 	Exist         bool          `json:"-"`
 	HashSource    string        `json:"hash_source"`
 	HashTarget    string        `json:"hash_target"`
-}
-
-func (pi *PackageInformation) GetSourceKey() string {
-	return fmt.Sprintf("%s$%s.json", pi.Package, pi.HashSource)
+	Url           string        `json:"-"`
 }
 
 func (pi *PackageInformation) GetTargetKey() string {
