@@ -3,12 +3,8 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-import MirrorList from './MirrorList';
-import MenuList from './MenuList';
-import CardMirror from './CardMirror';
+import MirrorList from './MirrorList'
+import MenuList from './MenuList'
+import CardMirror from './CardMirror'
 
-export {
-    MirrorList,
-    MenuList,
-    CardMirror,
-};
+export { MirrorList, MenuList, CardMirror }

@@ -13,7 +13,7 @@ import (
 )
 
 // required by go-bindata
-var rootDir = "./gui/build"
+var rootDir = "./gui/dist"
 
 func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 	l.Prepare(func(app *goapp.App) error {

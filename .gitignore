@@ -7,3 +7,5 @@ build
 assets/bindata.go
 vendor
 var/
+gui/.cache
+gui/dist
