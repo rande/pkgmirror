@@ -189,7 +189,7 @@ func (ns *NpmService) SyncPackages() error {
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			pkg := &ShortPackageDefinition{}
 
-			if len(k) < 5 || string(k[len(k)-5:len(k)]) != ".meta" {
+			if len(k) < 5 || string(k[len(k)-5:]) != ".meta" {
 				logger.WithFields(log.Fields{
 					"package": string(k),
 				}).Debug("Skipping non meta entry")

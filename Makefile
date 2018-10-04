@@ -23,9 +23,8 @@ format-frontend:  ## Format code to respect CS
 	cd gui && yarn prettier --single-quote --trailing-comma es5 --write "src/**/*.js"
 
 format-backend:  ## Format code to respect CS
-	goimports -w $(GO_FILES)
+	`go env GOPATH`/bin/goimports -w $(GO_FILES)
 	gofmt -l -w -s $(GO_FILES)
-	go fix $(GO_PROJECTS_PATHS)
 	go vet $(GO_PROJECTS_PATHS)
 
 coverage-backend: ## run coverage tests
