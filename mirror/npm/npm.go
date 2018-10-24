@@ -147,22 +147,21 @@ func (ns *NpmService) SyncPackages() error {
 				continue
 			}
 
-			if currentPkg.Rev != remotePkg.Rev {
-				logger.WithFields(log.Fields{
-					"package":    currentPkg.Name,
-					"currentRev": currentPkg.Rev,
-					"remoteRev":  remotePkg.Rev,
-					"worker":     id,
-				}).Debug("Updating package information")
+			fields := log.Fields{
+				"package":         currentPkg.Name,
+				"currentRev":      currentPkg.Rev,
+				"remoteRev":       remotePkg.Rev,
+				"worker":          id,
+				"currentReleases": currentPkg.ReleasesAvailable,
+				"remoteReleases":  len(remotePkg.Versions),
+			}
+
+			if currentPkg.Rev != remotePkg.Rev || currentPkg.ReleasesAvailable != len(remotePkg.Versions) {
+				logger.WithFields(fields).Info("Updating package information")
 
 				result <- *remotePkg
 			} else {
-				logger.WithFields(log.Fields{
-					"package":    currentPkg.Name,
-					"currentRev": currentPkg.Rev,
-					"remoteRev":  remotePkg.Rev,
-					"worker":     id,
-				}).Debug("Revisions are equal, nothing to update")
+				logger.WithFields(fields).Info("Revisions are equal, nothing to update")
 			}
 		}
 	})
@@ -170,7 +169,7 @@ func (ns *NpmService) SyncPackages() error {
 	dm.ResultCallback(func(data interface{}) {
 		pkg := data.(FullPackageDefinition)
 
-		_, err := ns.savePackage(&pkg)
+		err := ns.savePackage(&pkg)
 
 		if err != nil {
 			logger.WithFields(log.Fields{
@@ -223,7 +222,7 @@ func (ns *NpmService) SyncPackages() error {
 	return nil
 }
 
-func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
+func (ns *NpmService) savePackage(pkg *FullPackageDefinition) error {
 	var data []byte
 	var datac []byte
 	var meta []byte
@@ -242,13 +241,14 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 
 	// create the short version, to avoid storing to many useless information
 	shortPkg := &ShortPackageDefinition{
-		ID:   pkg.ID,
-		Rev:  pkg.Rev,
-		Name: pkg.Name,
+		ID:                pkg.ID,
+		Rev:               pkg.Rev,
+		Name:              pkg.Name,
+		ReleasesAvailable: len(pkg.Versions),
 	}
 
 	if meta, err = json.Marshal(shortPkg); err != nil {
-		return data, err
+		return err
 	}
 
 	for _, version := range pkg.Versions {
@@ -266,7 +266,7 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 	if err != nil {
 		logger.WithError(err).Error("Unable to marshal data")
 
-		return nil, err
+		return err
 	}
 
 	err = ns.DB.Update(func(tx *bolt.Tx) error {
@@ -299,11 +299,10 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 		return nil
 	})
 
-	return datac, err
+	return err
 }
 
 func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
-
 	// handle scoped package
 	name = strings.Replace(name, "/", "%2f", -1)
 
@@ -312,7 +311,7 @@ func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
 		"name":   name,
 	})
 
-	logger.Info("Load remote data")
+	logger.Debug("Load remote data")
 
 	pkg := &FullPackageDefinition{}
 
@@ -362,25 +361,21 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 
 	// the key is not here, get it from the source
 	if err == pkgmirror.EmptyKeyError {
-		return ns.updatePackage(key, "")
-	}
+		if err := ns.UpdatePackage(key); err != nil {
+			return data, err
+		}
 
-	if err != nil {
-		return data, err
+		return ns.Get(key)
 	}
 
 	return data, err
 }
 
-func (ns *NpmService) updatePackage(key, rev string) ([]byte, error) {
+func (ns *NpmService) UpdatePackage(key string) error {
 	pkg, err := ns.loadPackage(key)
 
 	if err != nil {
-		return []byte{}, err
-	}
-
-	if pkg.Rev == rev { // nothing to update
-		return []byte{}, nil
+		return err
 	}
 
 	return ns.savePackage(pkg)

@@ -57,9 +57,10 @@ type PackageVersionDefinition struct {
 }
 
 type ShortPackageDefinition struct {
-	ID   string `json:"_id,omitempty"`
-	Rev  string `json:"_rev,omitempty"`
-	Name string `json:"name,omitempty"`
+	ID                string `json:"_id,omitempty"`
+	Rev               string `json:"_rev,omitempty"`
+	Name              string `json:"name,omitempty"`
+	ReleasesAvailable int    `json:"releases_available,omitempty"`
 }
 
 type FullPackageDefinition struct {
