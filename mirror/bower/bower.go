@@ -48,10 +48,10 @@ func (bs *BowerService) Init(app *goapp.App) (err error) {
 
 	if bs.DB, err = pkgmirror.OpenDatabaseWithBucket(bs.Config.Path, bs.Config.Code); err != nil {
 		bs.Logger.WithFields(log.Fields{
-			"error":  err,
-			"path":   bs.Config.Path,
-			"bucket": string(bs.Config.Code),
-			"action": "Init",
+			log.ErrorKey: err,
+			"path":       bs.Config.Path,
+			"bucket":     string(bs.Config.Code),
+			"action":     "Init",
 		}).Error("Unable to open the internal database")
 	}
 
@@ -123,8 +123,8 @@ func (bs *BowerService) SyncPackages() error {
 
 	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/packages", bs.Config.SourceServer), &pkgs); err != nil {
 		logger.WithFields(log.Fields{
-			"path":  "packages",
-			"error": err.Error(),
+			"path":       "packages",
+			log.ErrorKey: err.Error(),
 		}).Error("Error loading bower packages list")
 
 		return err // an error occurs avoid empty file

@@ -67,10 +67,10 @@ func (ns *NpmService) Init(app *goapp.App) (err error) {
 
 	if ns.DB, err = pkgmirror.OpenDatabaseWithBucket(ns.Config.Path, ns.Config.Code); err != nil {
 		ns.Logger.WithFields(log.Fields{
-			"error":  err,
-			"path":   ns.Config.Path,
-			"bucket": string(ns.Config.Code),
-			"action": "Init",
+			log.ErrorKey: err,
+			"path":       ns.Config.Path,
+			"bucket":     string(ns.Config.Code),
+			"action":     "Init",
 		}).Error("Unable to open the internal database")
 	}
 
@@ -140,8 +140,8 @@ func (ns *NpmService) SyncPackages() error {
 
 			if err != nil {
 				logger.WithFields(log.Fields{
-					"package": currentPkg.Name,
-					"error":   err.Error(),
+					"package":    currentPkg.Name,
+					log.ErrorKey: err.Error(),
 				}).Error("Error loading package information")
 
 				continue
@@ -205,8 +205,8 @@ func (ns *NpmService) SyncPackages() error {
 
 			if err != nil {
 				logger.WithFields(log.Fields{
-					"error":   err,
-					"package": string(k),
+					log.ErrorKey: err,
+					"package":    string(k),
 				}).Error("Unable to Unmarshal the npm package")
 
 				continue
@@ -256,8 +256,8 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 			version.Dist.Tarball = fmt.Sprintf("%s/npm/%s/%s", ns.Config.PublicServer, string(ns.Config.Code), results[3])
 		} else {
 			logger.WithFields(log.Fields{
-				"error":   "regexp does not match",
-				"tarball": version.Dist.Tarball,
+				log.ErrorKey: "regexp does not match",
+				"tarball":    version.Dist.Tarball,
 			}).Error("Unable to find host")
 		}
 	}
@@ -318,8 +318,8 @@ func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
 
 	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ns.Config.SourceServer, name), &pkg); err != nil {
 		logger.WithFields(log.Fields{
-			"path":  fmt.Sprintf("%s/%s", ns.Config.SourceServer, name),
-			"error": err.Error(),
+			"path":       fmt.Sprintf("%s/%s", ns.Config.SourceServer, name),
+			log.ErrorKey: err.Error(),
 		}).Error("Error loading package definition")
 
 		return nil, err

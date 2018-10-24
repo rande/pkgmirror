@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -57,10 +56,10 @@ func (gs *StaticService) Init(app *goapp.App) (err error) {
 
 	if gs.DB, err = pkgmirror.OpenDatabaseWithBucket(gs.Config.Path, gs.Config.Code); err != nil {
 		gs.Logger.WithFields(log.Fields{
-			"error":  err,
-			"path":   gs.Config.Path,
-			"bucket": string(gs.Config.Code),
-			"action": "Init",
+			log.ErrorKey: err,
+			"path":       gs.Config.Path,
+			"bucket":     string(gs.Config.Code),
+			"action":     "Init",
 		}).Error("Unable to open the internal database")
 	}
 
