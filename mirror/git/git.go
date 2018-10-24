@@ -6,16 +6,16 @@
 package git
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
-
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
@@ -138,7 +138,7 @@ func (gs *GitService) syncRepositories(service string) {
 
 	for _, path := range paths {
 		logger := gs.Logger.WithFields(log.Fields{
-			"path":   path[len(service):],
+			"path":   path,
 			"action": "SyncRepositories",
 		})
 
@@ -149,17 +149,29 @@ func (gs *GitService) syncRepositories(service string) {
 
 		logger.Info("Sync repository")
 
+		var outbuf, errbuf bytes.Buffer
+
 		cmd := exec.Command(gs.Config.Binary, "fetch")
 		cmd.Dir = path
+		cmd.Stdout = &outbuf
+		cmd.Stderr = &errbuf
 
 		if err := cmd.Start(); err != nil {
-			logger.WithError(err).Error("Error while starting the fetch command")
+			logger.WithFields(log.Fields{
+				log.ErrorKey: err,
+				"stderr":     errbuf.String(),
+				"stdout":     outbuf.String(),
+			}).Error("Error while starting the fetch command")
 
 			continue
 		}
 
 		if err := cmd.Wait(); err != nil {
-			logger.WithError(err).Error("Error while waiting the fetch command")
+			logger.WithFields(log.Fields{
+				log.ErrorKey: err,
+				"stderr":     errbuf.String(),
+				"stdout":     outbuf.String(),
+			}).Error("Error while waiting the fetch command")
 
 			continue
 		}
