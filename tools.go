@@ -9,41 +9,12 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
-	"time"
-
-	"github.com/boltdb/bolt"
 )
-
-func OpenDatabaseWithBucket(basePath string, bucket []byte) (db *bolt.DB, err error) {
-	if err = os.MkdirAll(basePath, 0755); err != nil {
-		return
-	}
-
-	path := fmt.Sprintf("%s/%s.db", basePath, bucket)
-
-	db, err = bolt.Open(path, 0600, &bolt.Options{
-		Timeout:  1 * time.Second,
-		ReadOnly: false,
-	})
-
-	if err != nil {
-		return
-	}
-
-	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(bucket)
-
-		return err
-	})
-
-	return
-}
 
 func LoadStruct(file string, v interface{}) error {
 	r, err := os.Open(file)

@@ -36,16 +36,25 @@ func NewBowerService() *BowerService {
 }
 
 type BowerService struct {
-	DB        *bolt.DB
-	Config    *BowerConfig
-	Logger    *log.Entry
-	lock      bool
-	StateChan chan pkgmirror.State
+	DB            *bolt.DB
+	Config        *BowerConfig
+	Logger        *log.Entry
+	lock          bool
+	StateChan     chan pkgmirror.State
+	BoltCompacter *pkgmirror.BoltCompacter
 }
 
 func (bs *BowerService) Init(app *goapp.App) (err error) {
 	bs.Logger.Info("Init")
 
+	if err := bs.openDatabase(); err != nil {
+		return err
+	}
+
+	return bs.optimize()
+}
+
+func (bs *BowerService) openDatabase() (err error) {
 	if bs.DB, err = pkgmirror.OpenDatabaseWithBucket(bs.Config.Path, bs.Config.Code); err != nil {
 		bs.Logger.WithFields(log.Fields{
 			log.ErrorKey: err,
@@ -53,9 +62,29 @@ func (bs *BowerService) Init(app *goapp.App) (err error) {
 			"bucket":     string(bs.Config.Code),
 			"action":     "Init",
 		}).Error("Unable to open the internal database")
+
+		return err
 	}
 
-	return
+	return nil
+}
+
+func (bs *BowerService) optimize() error {
+	bs.lock = true
+
+	path := bs.DB.Path()
+
+	bs.DB.Close()
+
+	if err := bs.BoltCompacter.Compact(path); err != nil {
+		return err
+	}
+
+	err := bs.openDatabase()
+
+	bs.lock = false
+
+	return err
 }
 
 func (bs *BowerService) Serve(state *goapp.GoroutineState) error {
@@ -63,10 +92,20 @@ func (bs *BowerService) Serve(state *goapp.GoroutineState) error {
 
 	syncEnd := make(chan bool)
 
+	iteration := 0
 	sync := func() {
 		bs.Logger.Info("Starting a new sync...")
 
 		bs.SyncPackages()
+
+		iteration++
+
+		// optimize every 10 iteration
+		if iteration > 9 {
+			bs.Logger.Info("Starting database optimization")
+			bs.optimize()
+			iteration = 0
+		}
 
 		syncEnd <- true
 	}

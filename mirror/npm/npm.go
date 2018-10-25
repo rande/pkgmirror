@@ -47,14 +47,15 @@ func NewNpmService() *NpmService {
 }
 
 type NpmService struct {
-	DB        *bolt.DB
-	Config    *NpmConfig
-	Logger    *log.Entry
-	GitConfig *git.GitConfig
-	Vault     *vault.Vault
-	lock      bool
-	dbLock    *sync.Mutex
-	StateChan chan pkgmirror.State
+	DB            *bolt.DB
+	Config        *NpmConfig
+	Logger        *log.Entry
+	GitConfig     *git.GitConfig
+	Vault         *vault.Vault
+	lock          bool
+	dbLock        *sync.Mutex
+	StateChan     chan pkgmirror.State
+	BoltCompacter *pkgmirror.BoltCompacter
 }
 
 func (ns *NpmService) Init(app *goapp.App) (err error) {
@@ -65,6 +66,14 @@ func (ns *NpmService) Init(app *goapp.App) (err error) {
 		"name":     ns.Config.Code,
 	}).Info("Init bolt db")
 
+	if err := ns.openDatabase(); err != nil {
+		return err
+	}
+
+	return ns.optimize()
+}
+
+func (ns *NpmService) openDatabase() (err error) {
 	if ns.DB, err = pkgmirror.OpenDatabaseWithBucket(ns.Config.Path, ns.Config.Code); err != nil {
 		ns.Logger.WithFields(log.Fields{
 			log.ErrorKey: err,
@@ -72,9 +81,29 @@ func (ns *NpmService) Init(app *goapp.App) (err error) {
 			"bucket":     string(ns.Config.Code),
 			"action":     "Init",
 		}).Error("Unable to open the internal database")
+
+		return err
 	}
 
-	return
+	return nil
+}
+
+func (ns *NpmService) optimize() error {
+	ns.lock = true
+
+	path := ns.DB.Path()
+
+	ns.DB.Close()
+
+	if err := ns.BoltCompacter.Compact(path); err != nil {
+		return err
+	}
+
+	err := ns.openDatabase()
+
+	ns.lock = false
+
+	return err
 }
 
 func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
@@ -82,13 +111,61 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 
 	syncEnd := make(chan bool)
 
+	iteration := 0
+
 	sync := func() {
 		ns.Logger.Info("Starting a new sync...")
 
 		ns.SyncPackages()
 
+		iteration++
+
+		// optimize every 10 iteration
+		if iteration > 9 {
+			ns.Logger.Info("Starting database optimization")
+			ns.optimize()
+			iteration = 0
+		}
+
 		syncEnd <- true
 	}
+
+	// go func() {
+	// 	// Grab the initial stats.
+	// 	prev := ns.DB.Stats()
+
+	// 	for {
+	// 		// Wait for 10s.
+	// 		time.Sleep(10 * time.Second)
+
+	// 		// Grab the current stats and diff them.
+	// 		stats := ns.DB.Stats()
+	// 		diff := stats.Sub(&prev)
+
+	// 		ns.Logger.WithFields(log.Fields{
+	// 			"FreeAlloc":     diff.FreeAlloc,
+	// 			"FreePageN":     diff.FreePageN,
+	// 			"PendingPageN":  diff.PendingPageN,
+	// 			"FreelistInuse": diff.FreelistInuse,
+	// 			"TxN":           diff.TxN,
+	// 			"PageCount":     diff.TxStats.PageCount,
+	// 			"PageAlloc":     diff.TxStats.PageAlloc,
+	// 			"CursorCount":   diff.TxStats.CursorCount,
+	// 			"NodeCount":     diff.TxStats.NodeCount,
+	// 			"NodeDeref":     diff.TxStats.NodeDeref,
+	// 			"Rebalance":     diff.TxStats.Rebalance,
+	// 			"RebalanceTime": diff.TxStats.RebalanceTime,
+	// 			"Split":         diff.TxStats.Split,
+	// 			"Spill":         diff.TxStats.Spill,
+	// 			"SpillTime":     diff.TxStats.SpillTime,
+	// 			"Write":         diff.TxStats.Write,
+	// 			"WriteTime":     diff.TxStats.WriteTime,
+	// 		}).Info("Dump stats")
+
+	// 		// Save stats for the next loop.
+	// 		prev = stats
+	// 	}
+	// }()
 
 	// start the first sync
 	go sync()
@@ -120,6 +197,10 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 }
 
 func (ns *NpmService) SyncPackages() error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"action": "SyncPackages",
 	})
@@ -157,11 +238,11 @@ func (ns *NpmService) SyncPackages() error {
 			}
 
 			if currentPkg.Rev != remotePkg.Rev || currentPkg.ReleasesAvailable != len(remotePkg.Versions) {
-				logger.WithFields(fields).Info("Updating package information")
+				logger.WithFields(fields).Debug("Updating package information")
 
 				result <- *remotePkg
 			} else {
-				logger.WithFields(fields).Info("Revisions are equal, nothing to update")
+				logger.WithFields(fields).Debug("Revisions are equal, nothing to update")
 			}
 		}
 	})
@@ -217,12 +298,23 @@ func (ns *NpmService) SyncPackages() error {
 		return nil
 	})
 
-	//dm.Wait()
+	logger.Info("Wait for download to complete")
+
+	ns.StateChan <- pkgmirror.State{
+		Message: "Wait for download to complete",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
+
+	dm.Wait()
 
 	return nil
 }
 
 func (ns *NpmService) savePackage(pkg *FullPackageDefinition) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	var data []byte
 	var datac []byte
 	var meta []byte
@@ -334,6 +426,10 @@ func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
 func (ns *NpmService) Get(key string) ([]byte, error) {
 	var data []byte
 
+	if ns.lock {
+		return data, pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"action": "Get",
 		"key":    key,
@@ -361,6 +457,8 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 
 	// the key is not here, get it from the source
 	if err == pkgmirror.EmptyKeyError {
+		logger.Info("Package does not exist")
+
 		if err := ns.UpdatePackage(key); err != nil {
 			return data, err
 		}
@@ -372,6 +470,10 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 }
 
 func (ns *NpmService) UpdatePackage(key string) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	pkg, err := ns.loadPackage(key)
 
 	if err != nil {
@@ -382,6 +484,10 @@ func (ns *NpmService) UpdatePackage(key string) error {
 }
 
 func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"package": pkg,
 		"version": version,

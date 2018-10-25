@@ -39,12 +39,13 @@ func NewComposerService() *ComposerService {
 }
 
 type ComposerService struct {
-	DB           *bolt.DB
-	Config       *ComposerConfig
-	Logger       *log.Entry
-	lock         bool
-	StateChan    chan pkgmirror.State
-	ProvidersURL string
+	DB            *bolt.DB
+	Config        *ComposerConfig
+	Logger        *log.Entry
+	lock          bool
+	StateChan     chan pkgmirror.State
+	ProvidersURL  string
+	BoltCompacter *pkgmirror.BoltCompacter
 }
 
 func (ps *ComposerService) getPackageUrl(pi *PackageInformation) string {
@@ -64,16 +65,11 @@ func (ps *ComposerService) getPackageKey(pi *PackageInformation) string {
 func (ps *ComposerService) Init(app *goapp.App) (err error) {
 	ps.Logger.Info("Init")
 
-	if ps.DB, err = pkgmirror.OpenDatabaseWithBucket(ps.Config.Path, ps.Config.Code); err != nil {
-		ps.Logger.WithFields(log.Fields{
-			"error":  err,
-			"path":   ps.Config.Path,
-			"bucket": string(ps.Config.Code),
-			"action": "Init",
-		}).Error("Unable to open the internal database")
+	if err := ps.openDatabase(); err != nil {
+		return err
 	}
 
-	return
+	return ps.optimize()
 }
 
 func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
@@ -81,12 +77,23 @@ func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 
 	syncEnd := make(chan bool)
 
+	iteration := 0
+
 	sync := func() {
 		ps.Logger.Info("Starting a new sync...")
 
 		ps.SyncPackages()
 		ps.UpdateEntryPoints()
 		ps.CleanPackages()
+
+		iteration++
+
+		// optimize every 10 iteration
+		if iteration > 9 {
+			ps.Logger.Info("Starting database optimization")
+			ps.optimize()
+			iteration = 0
+		}
 
 		syncEnd <- true
 	}
@@ -118,6 +125,39 @@ func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {
 			}()
 		}
 	}
+}
+
+func (ps *ComposerService) openDatabase() (err error) {
+	if ps.DB, err = pkgmirror.OpenDatabaseWithBucket(ps.Config.Path, ps.Config.Code); err != nil {
+		ps.Logger.WithFields(log.Fields{
+			log.ErrorKey: err,
+			"path":       ps.Config.Path,
+			"bucket":     string(ps.Config.Code),
+			"action":     "Init",
+		}).Error("Unable to open the internal database")
+
+		return err
+	}
+
+	return nil
+}
+
+func (ps *ComposerService) optimize() error {
+	ps.lock = true
+
+	path := ps.DB.Path()
+
+	ps.DB.Close()
+
+	if err := ps.BoltCompacter.Compact(path); err != nil {
+		return err
+	}
+
+	err := ps.openDatabase()
+
+	ps.lock = false
+
+	return err
 }
 
 func (ps *ComposerService) SyncPackages() error {

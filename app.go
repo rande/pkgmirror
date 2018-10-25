@@ -41,6 +41,15 @@ func GetApp(conf *Config, l *goapp.Lifecycle) (*goapp.App, error) {
 		return conf
 	})
 
+	app.Set("bolt.compacter", func(app *goapp.App) interface{} {
+		logger := app.Get("logger").(*log.Logger)
+
+		return &BoltCompacter{
+			Logger:    logger,
+			TxMaxSize: 65536,
+		}
+	})
+
 	app.Set("mux", func(app *goapp.App) interface{} {
 		m := goji.NewMux()
 

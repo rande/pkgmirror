@@ -44,16 +44,26 @@ type StaticConfig struct {
 }
 
 type StaticService struct {
-	DB        *bolt.DB
-	Config    *StaticConfig
-	Logger    *log.Entry
-	Vault     *vault.Vault
-	StateChan chan pkgmirror.State
+	DB            *bolt.DB
+	Config        *StaticConfig
+	Logger        *log.Entry
+	Vault         *vault.Vault
+	StateChan     chan pkgmirror.State
+	BoltCompacter *pkgmirror.BoltCompacter
+	lock          bool
 }
 
 func (gs *StaticService) Init(app *goapp.App) (err error) {
 	os.MkdirAll(string(filepath.Separator)+gs.Config.Path, 0755)
 
+	if err := gs.openDatabase(); err != nil {
+		return err
+	}
+
+	return gs.optimize()
+}
+
+func (gs *StaticService) openDatabase() (err error) {
 	if gs.DB, err = pkgmirror.OpenDatabaseWithBucket(gs.Config.Path, gs.Config.Code); err != nil {
 		gs.Logger.WithFields(log.Fields{
 			log.ErrorKey: err,
@@ -61,9 +71,29 @@ func (gs *StaticService) Init(app *goapp.App) (err error) {
 			"bucket":     string(gs.Config.Code),
 			"action":     "Init",
 		}).Error("Unable to open the internal database")
+
+		return err
 	}
 
-	return
+	return nil
+}
+
+func (gs *StaticService) optimize() error {
+	gs.lock = true
+
+	path := gs.DB.Path()
+
+	gs.DB.Close()
+
+	if err := gs.BoltCompacter.Compact(path); err != nil {
+		return err
+	}
+
+	err := gs.openDatabase()
+
+	gs.lock = false
+
+	return err
 }
 
 func (gs *StaticService) Serve(state *goapp.GoroutineState) error {
