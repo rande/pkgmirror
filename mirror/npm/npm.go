@@ -66,11 +66,7 @@ func (ns *NpmService) Init(app *goapp.App) (err error) {
 		"name":     ns.Config.Code,
 	}).Info("Init bolt db")
 
-	if err := ns.openDatabase(); err != nil {
-		return err
-	}
-
-	return ns.optimize()
+	return ns.openDatabase()
 }
 
 func (ns *NpmService) openDatabase() (err error) {

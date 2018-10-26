@@ -47,11 +47,7 @@ type BowerService struct {
 func (bs *BowerService) Init(app *goapp.App) (err error) {
 	bs.Logger.Info("Init")
 
-	if err := bs.openDatabase(); err != nil {
-		return err
-	}
-
-	return bs.optimize()
+	return bs.openDatabase()
 }
 
 func (bs *BowerService) openDatabase() (err error) {

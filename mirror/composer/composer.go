@@ -65,11 +65,7 @@ func (ps *ComposerService) getPackageKey(pi *PackageInformation) string {
 func (ps *ComposerService) Init(app *goapp.App) (err error) {
 	ps.Logger.Info("Init")
 
-	if err := ps.openDatabase(); err != nil {
-		return err
-	}
-
-	return ps.optimize()
+	return ps.openDatabase()
 }
 
 func (ps *ComposerService) Serve(state *goapp.GoroutineState) error {

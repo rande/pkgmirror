@@ -56,11 +56,7 @@ type StaticService struct {
 func (gs *StaticService) Init(app *goapp.App) (err error) {
 	os.MkdirAll(string(filepath.Separator)+gs.Config.Path, 0755)
 
-	if err := gs.openDatabase(); err != nil {
-		return err
-	}
-
-	return gs.optimize()
+	return gs.openDatabase()
 }
 
 func (gs *StaticService) openDatabase() (err error) {
