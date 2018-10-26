@@ -34,6 +34,7 @@ var (
 	SVN_REPOSITORY = regexp.MustCompile(`(svn:\/\/(.*)|(.*)\.svn\.(.*))`)
 
 	CACHEABLE_REF = regexp.MustCompile(`([\w\d]{40}|[\w\d]+\.[\w\d]+\.[\w\d]+(-[\w\d]+|))`)
+	IS_REF        = regexp.MustCompile(`^[a-zA-Z0-9\.\-]{1,40}$`)
 )
 
 func NewGitService() *GitService {
@@ -82,7 +83,7 @@ func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 	sync := func() {
 		gs.Logger.Info("Starting a new sync...")
 
-		gs.syncRepositories(fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server))
+		gs.syncRepositories()
 
 		syncEnd <- true
 	}
@@ -115,7 +116,9 @@ func (gs *GitService) Serve(state *goapp.GoroutineState) error {
 	}
 }
 
-func (gs *GitService) syncRepositories(service string) {
+func (gs *GitService) syncRepositories() {
+	service := fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server)
+
 	gs.Logger.WithFields(log.Fields{
 		"action":  "SyncRepositories",
 		"datadir": service,
@@ -137,50 +140,63 @@ func (gs *GitService) syncRepositories(service string) {
 	}
 
 	for _, path := range paths {
-		logger := gs.Logger.WithFields(log.Fields{
-			"path":   path,
-			"action": "SyncRepositories",
-		})
+		// remove the base path
+		path := path[len(service):] // compute in the fetchRepository - SRP
 
-		gs.StateChan <- pkgmirror.State{
-			Message: fmt.Sprintf("Fetch %s", path[len(service):]),
-			Status:  pkgmirror.STATUS_RUNNING,
-		}
-
-		logger.Info("Sync repository")
-
-		var outbuf, errbuf bytes.Buffer
-
-		cmd := exec.Command(gs.Config.Binary, "fetch")
-		cmd.Dir = path
-		cmd.Stdout = &outbuf
-		cmd.Stderr = &errbuf
-
-		if err := cmd.Start(); err != nil {
-			logger.WithFields(log.Fields{
-				log.ErrorKey: err,
-				"stderr":     errbuf.String(),
-				"stdout":     outbuf.String(),
-			}).Error("Error while starting the fetch command")
-
-			continue
-		}
-
-		if err := cmd.Wait(); err != nil {
-			logger.WithFields(log.Fields{
-				log.ErrorKey: err,
-				"stderr":     errbuf.String(),
-				"stdout":     outbuf.String(),
-			}).Error("Error while waiting the fetch command")
-
-			continue
-		}
-
-		gs.Logger.WithFields(log.Fields{
-			"path":   path,
-			"action": "SyncRepositories",
-		}).Debug("Complete the fetch command")
+		gs.fetchRepository(path)
 	}
+}
+
+func (gs *GitService) fetchRepository(path string) error {
+	service := fmt.Sprintf("%s/%s", gs.Config.DataDir, gs.Config.Server)
+
+	dir := fmt.Sprintf("%s/%s", service, path)
+
+	logger := gs.Logger.WithFields(log.Fields{
+		"path":   path,
+		"action": "fetchRepository",
+	})
+
+	gs.StateChan <- pkgmirror.State{
+		Message: fmt.Sprintf("Fetch %s", dir[len(service):]),
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
+
+	logger.Info("fetch repository")
+
+	var outbuf, errbuf bytes.Buffer
+
+	cmd := exec.Command(gs.Config.Binary, "fetch")
+	cmd.Dir = dir
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+
+	if err := cmd.Start(); err != nil {
+		logger.WithFields(log.Fields{
+			log.ErrorKey: err,
+			"stderr":     errbuf.String(),
+			"stdout":     outbuf.String(),
+		}).Error("Error while starting the fetch command")
+
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		logger.WithFields(log.Fields{
+			log.ErrorKey: err,
+			"stderr":     errbuf.String(),
+			"stdout":     outbuf.String(),
+		}).Error("Error while waiting the fetch command")
+
+		return err
+	}
+
+	gs.Logger.WithFields(log.Fields{
+		"path":   path,
+		"action": "SyncRepositories",
+	}).Debug("Complete the fetch command")
+
+	return nil
 }
 
 func (gs *GitService) WriteArchive(w io.Writer, path, ref string) error {
@@ -198,12 +214,40 @@ func (gs *GitService) cacheArchive(w io.Writer, path, ref string) error {
 		"action": "cacheArchive",
 	})
 
+	if !IS_REF.Match([]byte(ref)) {
+		return pkgmirror.InvalidReferenceError
+	}
+
 	vaultKey := fmt.Sprintf("%s:%s/%s", gs.Config.Server, path, ref)
 
 	if !gs.Vault.Has(vaultKey) {
 		logger.Info("Create vault entry")
 
 		var wg sync.WaitGroup
+
+		if !gs.Has(path) { // repository exists, nothing to do
+			logger.Info("Git folder does not exist")
+
+			if len(gs.Config.Clone) == 0 {
+				return pkgmirror.ResourceNotFoundError // not configured, so skip clone
+			}
+
+			if err := gs.Clone(path); err != nil {
+				return err
+			}
+		}
+
+		if !gs.hasRef(path, ref) {
+			logger.Info("Reference does not exist, try to fetch remote repository")
+
+			if err := gs.fetchRepository(path); err != nil {
+				return err
+			}
+
+			if !gs.hasRef(path, ref) {
+				return pkgmirror.InvalidReferenceError
+			}
+		}
 
 		pr, pw := io.Pipe()
 		wg.Add(1)
@@ -252,10 +296,30 @@ func (gs *GitService) dataFolder() string {
 	return gs.Config.DataDir + string(filepath.Separator) + gs.Config.Server
 }
 
+func (gs *GitService) hasRef(path, ref string) bool {
+	if !IS_REF.Match([]byte(ref)) {
+		return false
+	}
+
+	cmd := exec.Command(gs.Config.Binary, "rev-parse", "--quiet", "--verify", ref)
+	cmd.Dir = gs.dataFolder() + string(filepath.Separator) + path
+
+	if err := cmd.Start(); err != nil {
+		return false
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (gs *GitService) writeArchive(w io.Writer, path, ref string) error {
 	logger := gs.Logger.WithFields(log.Fields{
-		"path":   path,
+		"path":   gs.dataFolder() + string(filepath.Separator) + path,
 		"action": "writeArchive",
+		"cmd":    fmt.Sprintf("%s archive --format=zip %s", gs.Config.Binary, ref),
 	})
 
 	cmd := exec.Command(gs.Config.Binary, "archive", "--format=zip", ref)
