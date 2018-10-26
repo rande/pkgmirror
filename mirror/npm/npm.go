@@ -61,11 +61,6 @@ type NpmService struct {
 func (ns *NpmService) Init(app *goapp.App) (err error) {
 	ns.Logger.Info("Init")
 
-	ns.Logger.WithFields(log.Fields{
-		"basePath": ns.Config.Path,
-		"name":     ns.Config.Code,
-	}).Info("Init bolt db")
-
 	return ns.openDatabase()
 }
 
@@ -110,7 +105,7 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 	iteration := 0
 
 	sync := func() {
-		ns.Logger.Info("Starting a new sync...")
+		ns.Logger.Debug("Starting a new sync...")
 
 		ns.SyncPackages()
 
@@ -178,7 +173,7 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 				Status:  pkgmirror.STATUS_HOLD,
 			}
 
-			ns.Logger.Info("Wait before starting a new sync...")
+			ns.Logger.Debug("Wait before starting a new sync...")
 
 			// we recursively call sync unless a state.In comes in to exist the current
 			// go routine (ie, the Serve function). This might not close the sync processus
@@ -201,14 +196,14 @@ func (ns *NpmService) SyncPackages() error {
 		"action": "SyncPackages",
 	})
 
-	logger.Info("Starting SyncPackages")
+	logger.Debug("Starting SyncPackages")
 
 	ns.StateChan <- pkgmirror.State{
 		Message: "Fetching packages metadatas",
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
 
-	logger.Info("Wait worker to complete")
+	logger.Debug("Wait worker to complete")
 
 	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
 		for raw := range data {
@@ -294,7 +289,7 @@ func (ns *NpmService) SyncPackages() error {
 		return nil
 	})
 
-	logger.Info("Wait for download to complete")
+	logger.Debug("Wait for download to complete")
 
 	ns.StateChan <- pkgmirror.State{
 		Message: "Wait for download to complete",
@@ -320,7 +315,7 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) error {
 		"package": pkg.Name,
 	})
 
-	logger.Info("Save package information")
+	logger.Debug("Save package information")
 
 	ns.StateChan <- pkgmirror.State{
 		Message: fmt.Sprintf("Save package information: %s", pkg.Name),
@@ -431,7 +426,7 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 		"key":    key,
 	})
 
-	logger.Info("Get raw data")
+	logger.Debug("Get raw data")
 
 	err := ns.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ns.Config.Code)
@@ -439,7 +434,7 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
-			logger.Info("Package does not exist in local DB")
+			logger.Debug("Package does not exist in local DB")
 
 			return pkgmirror.EmptyKeyError
 		}
@@ -453,7 +448,7 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 
 	// the key is not here, get it from the source
 	if err == pkgmirror.EmptyKeyError {
-		logger.Info("Package does not exist")
+		logger.Debug("Package does not exist")
 
 		if err := ns.UpdatePackage(key); err != nil {
 			return data, err
@@ -502,7 +497,7 @@ func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 			url = fmt.Sprintf("%s/%s/-/%s-%s.tgz", ns.Config.SourceServer, pkg, pkg, version)
 		}
 
-		logger.WithField("url", url).Info("Create vault entry")
+		logger.WithField("url", url).Debug("Create vault entry")
 
 		resp, err := http.Get(url)
 
@@ -529,7 +524,7 @@ func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 		}
 	}
 
-	logger.Info("Read vault entry")
+	logger.Debug("Read vault entry")
 	if _, err := ns.Vault.Get(vaultKey, w); err != nil {
 		return err
 	}
