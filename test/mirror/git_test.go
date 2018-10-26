@@ -16,6 +16,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_Git_Is_Ref_With_Valid_Reference(t *testing.T) {
+	references := []string{
+		"b5e004cc051bf68838f12b8463ac9ca84432ffce",
+		"0.0.1",
+		"1.1.1-beta.1",
+	}
+
+	for _, v := range references {
+		assert.True(t, git.IS_REF.Match([]byte(v)), v)
+	}
+}
+
+func Test_Git_Is_Ref_With_Invalid_Reference(t *testing.T) {
+	references := []string{
+		"asds@next",
+		"%...",
+		"/%...",
+	}
+
+	for _, v := range references {
+		assert.False(t, git.IS_REF.Match([]byte(v)), v)
+	}
+}
+
 func Test_Git_Clone_Existing_Repo(t *testing.T) {
 	optin := &test.TestOptin{Git: true}
 
@@ -77,6 +101,7 @@ func Test_Git_Download_Master_Archive(t *testing.T) {
 }
 
 func Test_Git_Download_Tag_Archive(t *testing.T) {
+
 	optin := &test.TestOptin{Git: true}
 
 	test.RunHttpTest(t, optin, func(args *test.Arguments) {

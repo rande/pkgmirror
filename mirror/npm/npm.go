@@ -47,34 +47,54 @@ func NewNpmService() *NpmService {
 }
 
 type NpmService struct {
-	DB        *bolt.DB
-	Config    *NpmConfig
-	Logger    *log.Entry
-	GitConfig *git.GitConfig
-	Vault     *vault.Vault
-	lock      bool
-	dbLock    *sync.Mutex
-	StateChan chan pkgmirror.State
+	DB            *bolt.DB
+	Config        *NpmConfig
+	Logger        *log.Entry
+	GitConfig     *git.GitConfig
+	Vault         *vault.Vault
+	lock          bool
+	dbLock        *sync.Mutex
+	StateChan     chan pkgmirror.State
+	BoltCompacter *pkgmirror.BoltCompacter
 }
 
 func (ns *NpmService) Init(app *goapp.App) (err error) {
 	ns.Logger.Info("Init")
 
-	ns.Logger.WithFields(log.Fields{
-		"basePath": ns.Config.Path,
-		"name":     ns.Config.Code,
-	}).Info("Init bolt db")
+	return ns.openDatabase()
+}
 
+func (ns *NpmService) openDatabase() (err error) {
 	if ns.DB, err = pkgmirror.OpenDatabaseWithBucket(ns.Config.Path, ns.Config.Code); err != nil {
 		ns.Logger.WithFields(log.Fields{
-			"error":  err,
-			"path":   ns.Config.Path,
-			"bucket": string(ns.Config.Code),
-			"action": "Init",
+			log.ErrorKey: err,
+			"path":       ns.Config.Path,
+			"bucket":     string(ns.Config.Code),
+			"action":     "Init",
 		}).Error("Unable to open the internal database")
+
+		return err
 	}
 
-	return
+	return nil
+}
+
+func (ns *NpmService) optimize() error {
+	ns.lock = true
+
+	path := ns.DB.Path()
+
+	ns.DB.Close()
+
+	if err := ns.BoltCompacter.Compact(path); err != nil {
+		return err
+	}
+
+	err := ns.openDatabase()
+
+	ns.lock = false
+
+	return err
 }
 
 func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
@@ -82,13 +102,61 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 
 	syncEnd := make(chan bool)
 
+	iteration := 0
+
 	sync := func() {
-		ns.Logger.Info("Starting a new sync...")
+		ns.Logger.Debug("Starting a new sync...")
 
 		ns.SyncPackages()
 
+		iteration++
+
+		// optimize every 10 iteration
+		if iteration > 9 {
+			ns.Logger.Info("Starting database optimization")
+			ns.optimize()
+			iteration = 0
+		}
+
 		syncEnd <- true
 	}
+
+	// go func() {
+	// 	// Grab the initial stats.
+	// 	prev := ns.DB.Stats()
+
+	// 	for {
+	// 		// Wait for 10s.
+	// 		time.Sleep(10 * time.Second)
+
+	// 		// Grab the current stats and diff them.
+	// 		stats := ns.DB.Stats()
+	// 		diff := stats.Sub(&prev)
+
+	// 		ns.Logger.WithFields(log.Fields{
+	// 			"FreeAlloc":     diff.FreeAlloc,
+	// 			"FreePageN":     diff.FreePageN,
+	// 			"PendingPageN":  diff.PendingPageN,
+	// 			"FreelistInuse": diff.FreelistInuse,
+	// 			"TxN":           diff.TxN,
+	// 			"PageCount":     diff.TxStats.PageCount,
+	// 			"PageAlloc":     diff.TxStats.PageAlloc,
+	// 			"CursorCount":   diff.TxStats.CursorCount,
+	// 			"NodeCount":     diff.TxStats.NodeCount,
+	// 			"NodeDeref":     diff.TxStats.NodeDeref,
+	// 			"Rebalance":     diff.TxStats.Rebalance,
+	// 			"RebalanceTime": diff.TxStats.RebalanceTime,
+	// 			"Split":         diff.TxStats.Split,
+	// 			"Spill":         diff.TxStats.Spill,
+	// 			"SpillTime":     diff.TxStats.SpillTime,
+	// 			"Write":         diff.TxStats.Write,
+	// 			"WriteTime":     diff.TxStats.WriteTime,
+	// 		}).Info("Dump stats")
+
+	// 		// Save stats for the next loop.
+	// 		prev = stats
+	// 	}
+	// }()
 
 	// start the first sync
 	go sync()
@@ -105,7 +173,7 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 				Status:  pkgmirror.STATUS_HOLD,
 			}
 
-			ns.Logger.Info("Wait before starting a new sync...")
+			ns.Logger.Debug("Wait before starting a new sync...")
 
 			// we recursively call sync unless a state.In comes in to exist the current
 			// go routine (ie, the Serve function). This might not close the sync processus
@@ -120,18 +188,22 @@ func (ns *NpmService) Serve(state *goapp.GoroutineState) error {
 }
 
 func (ns *NpmService) SyncPackages() error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"action": "SyncPackages",
 	})
 
-	logger.Info("Starting SyncPackages")
+	logger.Debug("Starting SyncPackages")
 
 	ns.StateChan <- pkgmirror.State{
 		Message: "Fetching packages metadatas",
 		Status:  pkgmirror.STATUS_RUNNING,
 	}
 
-	logger.Info("Wait worker to complete")
+	logger.Debug("Wait worker to complete")
 
 	dm := pkgmirror.NewWorkerManager(10, func(id int, data <-chan interface{}, result chan interface{}) {
 		for raw := range data {
@@ -140,29 +212,28 @@ func (ns *NpmService) SyncPackages() error {
 
 			if err != nil {
 				logger.WithFields(log.Fields{
-					"package": currentPkg.Name,
-					"error":   err.Error(),
+					"package":    currentPkg.Name,
+					log.ErrorKey: err.Error(),
 				}).Error("Error loading package information")
 
 				continue
 			}
 
-			if currentPkg.Rev != remotePkg.Rev {
-				logger.WithFields(log.Fields{
-					"package":    currentPkg.Name,
-					"currentRev": currentPkg.Rev,
-					"remoteRev":  remotePkg.Rev,
-					"worker":     id,
-				}).Debug("Updating package information")
+			fields := log.Fields{
+				"package":         currentPkg.Name,
+				"currentRev":      currentPkg.Rev,
+				"remoteRev":       remotePkg.Rev,
+				"worker":          id,
+				"currentReleases": currentPkg.ReleasesAvailable,
+				"remoteReleases":  len(remotePkg.Versions),
+			}
+
+			if currentPkg.Rev != remotePkg.Rev || currentPkg.ReleasesAvailable != len(remotePkg.Versions) {
+				logger.WithFields(fields).Debug("Updating package information")
 
 				result <- *remotePkg
 			} else {
-				logger.WithFields(log.Fields{
-					"package":    currentPkg.Name,
-					"currentRev": currentPkg.Rev,
-					"remoteRev":  remotePkg.Rev,
-					"worker":     id,
-				}).Debug("Revisions are equal, nothing to update")
+				logger.WithFields(fields).Debug("Revisions are equal, nothing to update")
 			}
 		}
 	})
@@ -170,7 +241,7 @@ func (ns *NpmService) SyncPackages() error {
 	dm.ResultCallback(func(data interface{}) {
 		pkg := data.(FullPackageDefinition)
 
-		_, err := ns.savePackage(&pkg)
+		err := ns.savePackage(&pkg)
 
 		if err != nil {
 			logger.WithFields(log.Fields{
@@ -205,8 +276,8 @@ func (ns *NpmService) SyncPackages() error {
 
 			if err != nil {
 				logger.WithFields(log.Fields{
-					"error":   err,
-					"package": string(k),
+					log.ErrorKey: err,
+					"package":    string(k),
 				}).Error("Unable to Unmarshal the npm package")
 
 				continue
@@ -218,12 +289,23 @@ func (ns *NpmService) SyncPackages() error {
 		return nil
 	})
 
-	//dm.Wait()
+	logger.Debug("Wait for download to complete")
+
+	ns.StateChan <- pkgmirror.State{
+		Message: "Wait for download to complete",
+		Status:  pkgmirror.STATUS_RUNNING,
+	}
+
+	dm.Wait()
 
 	return nil
 }
 
-func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
+func (ns *NpmService) savePackage(pkg *FullPackageDefinition) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	var data []byte
 	var datac []byte
 	var meta []byte
@@ -233,7 +315,7 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 		"package": pkg.Name,
 	})
 
-	logger.Info("Save package information")
+	logger.Debug("Save package information")
 
 	ns.StateChan <- pkgmirror.State{
 		Message: fmt.Sprintf("Save package information: %s", pkg.Name),
@@ -242,13 +324,14 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 
 	// create the short version, to avoid storing to many useless information
 	shortPkg := &ShortPackageDefinition{
-		ID:   pkg.ID,
-		Rev:  pkg.Rev,
-		Name: pkg.Name,
+		ID:                pkg.ID,
+		Rev:               pkg.Rev,
+		Name:              pkg.Name,
+		ReleasesAvailable: len(pkg.Versions),
 	}
 
 	if meta, err = json.Marshal(shortPkg); err != nil {
-		return data, err
+		return err
 	}
 
 	for _, version := range pkg.Versions {
@@ -256,8 +339,8 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 			version.Dist.Tarball = fmt.Sprintf("%s/npm/%s/%s", ns.Config.PublicServer, string(ns.Config.Code), results[3])
 		} else {
 			logger.WithFields(log.Fields{
-				"error":   "regexp does not match",
-				"tarball": version.Dist.Tarball,
+				log.ErrorKey: "regexp does not match",
+				"tarball":    version.Dist.Tarball,
 			}).Error("Unable to find host")
 		}
 	}
@@ -266,7 +349,7 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 	if err != nil {
 		logger.WithError(err).Error("Unable to marshal data")
 
-		return nil, err
+		return err
 	}
 
 	err = ns.DB.Update(func(tx *bolt.Tx) error {
@@ -299,11 +382,10 @@ func (ns *NpmService) savePackage(pkg *FullPackageDefinition) ([]byte, error) {
 		return nil
 	})
 
-	return datac, err
+	return err
 }
 
 func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
-
 	// handle scoped package
 	name = strings.Replace(name, "/", "%2f", -1)
 
@@ -312,14 +394,14 @@ func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
 		"name":   name,
 	})
 
-	logger.Info("Load remote data")
+	logger.Debug("Load remote data")
 
 	pkg := &FullPackageDefinition{}
 
 	if err := pkgmirror.LoadRemoteStruct(fmt.Sprintf("%s/%s", ns.Config.SourceServer, name), &pkg); err != nil {
 		logger.WithFields(log.Fields{
-			"path":  fmt.Sprintf("%s/%s", ns.Config.SourceServer, name),
-			"error": err.Error(),
+			"path":       fmt.Sprintf("%s/%s", ns.Config.SourceServer, name),
+			log.ErrorKey: err.Error(),
 		}).Error("Error loading package definition")
 
 		return nil, err
@@ -335,12 +417,16 @@ func (ns *NpmService) loadPackage(name string) (*FullPackageDefinition, error) {
 func (ns *NpmService) Get(key string) ([]byte, error) {
 	var data []byte
 
+	if ns.lock {
+		return data, pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"action": "Get",
 		"key":    key,
 	})
 
-	logger.Info("Get raw data")
+	logger.Debug("Get raw data")
 
 	err := ns.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ns.Config.Code)
@@ -348,7 +434,7 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 		raw := b.Get([]byte(key))
 
 		if len(raw) == 0 {
-			logger.Info("Package does not exist in local DB")
+			logger.Debug("Package does not exist in local DB")
 
 			return pkgmirror.EmptyKeyError
 		}
@@ -362,31 +448,37 @@ func (ns *NpmService) Get(key string) ([]byte, error) {
 
 	// the key is not here, get it from the source
 	if err == pkgmirror.EmptyKeyError {
-		return ns.updatePackage(key, "")
-	}
+		logger.Debug("Package does not exist")
 
-	if err != nil {
-		return data, err
+		if err := ns.UpdatePackage(key); err != nil {
+			return data, err
+		}
+
+		return ns.Get(key)
 	}
 
 	return data, err
 }
 
-func (ns *NpmService) updatePackage(key, rev string) ([]byte, error) {
+func (ns *NpmService) UpdatePackage(key string) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	pkg, err := ns.loadPackage(key)
 
 	if err != nil {
-		return []byte{}, err
-	}
-
-	if pkg.Rev == rev { // nothing to update
-		return []byte{}, nil
+		return err
 	}
 
 	return ns.savePackage(pkg)
 }
 
 func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
+	if ns.lock {
+		return pkgmirror.DatabaseLockedError
+	}
+
 	logger := ns.Logger.WithFields(log.Fields{
 		"package": pkg,
 		"version": version,
@@ -405,7 +497,7 @@ func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 			url = fmt.Sprintf("%s/%s/-/%s-%s.tgz", ns.Config.SourceServer, pkg, pkg, version)
 		}
 
-		logger.WithField("url", url).Info("Create vault entry")
+		logger.WithField("url", url).Debug("Create vault entry")
 
 		resp, err := http.Get(url)
 
@@ -432,7 +524,7 @@ func (ns *NpmService) WriteArchive(w io.Writer, pkg, version string) error {
 		}
 	}
 
-	logger.Info("Read vault entry")
+	logger.Debug("Read vault entry")
 	if _, err := ns.Vault.Get(vaultKey, w); err != nil {
 		return err
 	}

@@ -48,6 +48,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						"code":    name,
 					})
 					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.static.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
+					s.BoltCompacter = app.Get("bolt.compacter").(*pkgmirror.BoltCompacter)
 
 					if err := s.Init(app); err != nil {
 						panic(err)

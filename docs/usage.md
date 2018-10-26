@@ -90,7 +90,9 @@ If the ``Clone`` settings is not set, you need to manually add git repository:
         
         git clone --mirror git@github.com:rande/gonode.git ./data/git/github.com/rande/gonode.git
         
-        
+
+> In order to clone, make sure you have a proper ssh key setup and remote ssh fingerprint accepted on the server.
+
 Bower
 -----
 

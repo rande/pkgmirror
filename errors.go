@@ -11,10 +11,12 @@ import (
 
 var (
 	SyncInProgressError   = errors.New("A synchronization is already running")
+	DatabaseLockedError   = errors.New("The database is locked")
 	EmptyKeyError         = errors.New("No value available")
 	ResourceNotFoundError = errors.New("Resource not found")
 	EmptyDataError        = errors.New("Empty data")
 	SameKeyError          = errors.New("Same key")
 	HttpError             = errors.New("Http error")
 	InvalidPackageError   = errors.New("Invalid package error")
+	InvalidReferenceError = errors.New("Invalid reference")
 )

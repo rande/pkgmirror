@@ -48,6 +48,7 @@ func ConfigureApp(config *pkgmirror.Config, l *goapp.Lifecycle) {
 						},
 					}
 					s.StateChan = pkgmirror.GetStateChannel(fmt.Sprintf("pkgmirror.npm.%s", name), app.Get("pkgmirror.channel.state").(chan pkgmirror.State))
+					s.BoltCompacter = app.Get("bolt.compacter").(*pkgmirror.BoltCompacter)
 
 					if err := s.Init(app); err != nil {
 						panic(err)
@@ -105,6 +106,18 @@ func ConfigureHttp(name string, conf *pkgmirror.NpmConfig, app *goapp.App) {
 
 	mux.HandleFuncC(pat.Get(fmt.Sprintf("/npm/%s/*", name)), func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		pkg := r.URL.Path[6+len(name):]
+
+		if refresh := r.FormValue("refresh"); len(refresh) > 0 {
+			w.Header().Set("Content-Type", "application/json")
+
+			if err := npmService.UpdatePackage(pkg); err != nil {
+				pkgmirror.SendWithHttpCode(w, 500, err.Error())
+			} else {
+				pkgmirror.SendWithHttpCode(w, 200, "Package updated")
+			}
+
+			return
+		}
 
 		if data, err := npmService.Get(pkg); err != nil {
 			pkgmirror.SendWithHttpCode(w, 404, err.Error())
